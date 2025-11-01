@@ -11,7 +11,7 @@ export const translations = {
     tryForFree: 'Try for Free',
     
     // Hero Section
-    bookingBadge: 'Limited Availability — 2 Spots Remaining',
+    bookingBadge: 'Limited Availability — 10 Spots Remaining',
     heroUnlimited: 'AI Support',
     heroDesign: 'Agents',
     heroFor: 'for',
@@ -163,7 +163,7 @@ export const translations = {
     tryForFree: '無料で始める',
     
     // Hero Section
-    bookingBadge: '受付枠限定 — 残り2枠',
+    bookingBadge: '受付枠限定 — 残り10枠',
     heroUnlimited: 'AIサポート',
     heroDesign: 'エージェント',
     heroFor: 'を',

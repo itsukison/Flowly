@@ -369,7 +369,7 @@ export default function Home() {
             </div>
             
             {/* UI/UX - Left Side (pointing right/inward) */}
-            <div className="absolute top-[45%] left-0 -translate-y-1/2 transform rotate-8 hidden lg:block">
+            <div className="absolute top-[45%] left-0 -translate-y-1/2 transform rotate-5 hidden lg:block">
               <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#474747] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introUIUX')}</span>
