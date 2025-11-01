@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chatbase Landing Page - Next.js
+
+A modern, responsive landing page for Chatbase built with Next.js 16, Tailwind CSS, and Framer Motion.
+
+## Features
+
+- **Responsive Design**: Fully responsive layout that works on mobile, tablet, and desktop
+- **Custom Animations**: 
+  - Slideshow component with auto-rotating images
+  - Ticker component with scrolling text
+  - Noise effect background using canvas
+- **Modern UI**: Clean design with gradient backgrounds, glassmorphism effects, and smooth transitions
+- **Optimized Performance**: Built with Next.js for optimal loading and SEO
+
+## Tech Stack
+
+- **Next.js 16**: React framework with App Router
+- **Tailwind CSS 4**: Utility-first CSS framework
+- **Framer Motion**: Animation library
+- **TypeScript**: Type-safe development
+- **Inter Font**: Modern, clean typography
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+├── app/
+│   ├── page.tsx          # Main landing page
+│   ├── layout.tsx        # Root layout with fonts and metadata
+│   └── globals.css       # Global styles and animations
+├── components/
+│   ├── Slideshow.tsx     # Image slideshow component
+│   ├── Ticker.tsx        # Text ticker component
+│   └── Noise.tsx         # Canvas noise effect
+└── public/
+    ├── slideshow-img*.png
+    ├── avatar*.png
+    └── noise.svg
+```
 
-## Learn More
+## Components
 
-To learn more about Next.js, take a look at the following resources:
+### Slideshow
+Auto-rotating image carousel with smooth transitions.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Ticker
+Vertical scrolling text animation for displaying services.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Noise
+Canvas-based grain effect for adding texture to backgrounds.
+
+## Customization
+
+Colors are defined in `globals.css` using CSS variables:
+- `--woodsmoke`: #09090B (primary dark)
+- `--alabaster`: #FAFAFA (light background)
+- `--storm-gray`: #71717B (text secondary)
+- `--iron`: #E4E4E7 (borders)
+
+## Build for Production
+
+```bash
+npm run build
+npm start
+```
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The easiest way to deploy is using [Vercel](https://vercel.com/new).
