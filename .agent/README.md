@@ -1,10 +1,11 @@
-# Chatbase Landing Page - Next.js
+# Flowly Landing Page - Next.js
 
-A modern, responsive landing page for Chatbase built with Next.js 16, Tailwind CSS, and Framer Motion.
+A modern, responsive landing page for Flowly built with Next.js 16, Tailwind CSS, and Framer Motion. Flowly is an AI support agent platform designed for building exceptional customer experiences.
 
 ## Features
 
 - **Responsive Design**: Fully responsive layout that works on mobile, tablet, and desktop
+- **Internationalization**: Built-in language toggle supporting English and Japanese
 - **Custom Animations**: 
   - Slideshow component with auto-rotating images
   - Ticker component with scrolling text
@@ -45,9 +46,14 @@ app/
 │   ├── layout.tsx        # Root layout with fonts and metadata
 │   └── globals.css       # Global styles and animations
 ├── components/
+│   ├── Header.tsx        # Header with language toggle
 │   ├── Slideshow.tsx     # Image slideshow component
 │   ├── Ticker.tsx        # Text ticker component
 │   └── Noise.tsx         # Canvas noise effect
+├── contexts/
+│   └── LanguageContext.tsx  # Language state management
+├── lib/
+│   └── translations.ts   # Translation dictionary (EN/JP)
 └── public/
     ├── slideshow-img*.png
     ├── avatar*.png
@@ -55,6 +61,9 @@ app/
 ```
 
 ## Components
+
+### Header
+Navigation header with language toggle button (EN/JP) and responsive menu.
 
 ### Slideshow
 Auto-rotating image carousel with smooth transitions.
@@ -64,6 +73,14 @@ Vertical scrolling text animation for displaying services.
 
 ### Noise
 Canvas-based grain effect for adding texture to backgrounds.
+
+## Internationalization
+
+The site supports English and Japanese languages:
+- Language toggle in header
+- All content translated using React Context
+- Maintains layout integrity across both languages
+- Translation keys stored in `lib/translations.ts`
 
 ## Customization
 

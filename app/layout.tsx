@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "../contexts/LanguageContext";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -8,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Chatbase - AI Agents for Magical Customer Experiences",
-  description: "Build the perfect customer-facing AI agent with Chatbase",
+  title: "Flowly - AI Support Agents for Exceptional Customer Experiences",
+  description: "Build the perfect customer-facing AI support agent with Flowly",
 };
 
 export default function RootLayout({
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );
