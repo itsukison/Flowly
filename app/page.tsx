@@ -342,23 +342,305 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-20 min-h-screen flex items-center">
-        <div className="max-w-[1400px] mx-auto w-full">
-          <div className="relative overflow-hidden text-center py-24 bg-gradient-to-br from-[#667eea] via-[#764ba2] to-[#f093fb] rounded-3xl text-white px-10">
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">{t('ctaTitle')}</h2>
-              <p className="text-lg mb-10 max-w-[600px] mx-auto opacity-95">
-                {t('ctaSubtitle')}
-              </p>
-              <div className="flex flex-col items-center gap-5">
-                <button className="bg-white text-[#09090B] px-8 py-4 border-none rounded-full font-bold text-base cursor-pointer shadow-[0px_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0px_6px_30px_rgba(0,0,0,0.25)] transition-all hover:scale-105">
-                  {t('ctaButton')}
-                </button>
-                <div className="flex items-center gap-2 text-white/90">
-                  <span className="text-lg">✓</span>
-                  <span className="text-base">{t('ctaNote')}</span>
+      {/* Intro Section */}
+      <section className="bg-[#09090B] px-6 md:px-20 lg:px-32 xl:px-48 py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-[#1a1a1a] to-black opacity-50"></div>
+        <div className="max-w-[940px] mx-auto relative z-10">
+          {/* Heading */}
+          <div className="text-center mb-12">
+            <span className="inline-block px-[17px] py-[7px] border border-white/70 rounded-full font-medium text-base mb-4 bg-black/40 text-white/90">
+              {t('introBadge')}
+            </span>
+          </div>
+          
+          {/* Main Text with Scattered Tags */}
+          <div className="relative min-h-[500px] flex items-center justify-center py-12">
+            <h2 className="text-center text-3xl md:text-4xl lg:text-5xl -mt-15 leading-[1.3] text-white/80 max-w-[550px] mx-auto relative z-10">
+              {t('introText')}
+            </h2>
+            
+            {/* Service Tags - Scattered and Pointing Inward */}
+            {/* Strategy - Right Side (pointing left/inward) */}
+            <div className="absolute top-[35%] right-0 transform -rotate-6 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#FFD500] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introStrategy')}</span>
+              </div>
+            </div>
+            
+            {/* UI/UX - Left Side (pointing right/inward) */}
+            <div className="absolute top-[45%] left-0 -translate-y-1/2 transform rotate-8 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#474747] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introUIUX')}</span>
+              </div>
+            </div>
+            
+            {/* Prototyping - Right Side (pointing left/inward) */}
+            <div className="absolute top-[55%] right-0 transform rotate-8 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#FF45AB] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introPrototyping')}</span>
+              </div>
+            </div>
+            
+            {/* Animation - Top Right (pointing down-left/inward) */}
+            <div className="absolute top-[15%] right-[2%] transform -rotate-12 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#52FF69] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introAnimation')}</span>
+              </div>
+            </div>
+            
+            {/* Research - Left Bottom (pointing up-right/inward) */}
+            <div className="absolute bottom-[23%] left-0 transform -rotate-8 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#05A9FF] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introResearch')}</span>
+              </div>
+            </div>
+            
+            {/* Design Systems - Left Top (pointing down-right/inward) */}
+            <div className="absolute top-[20%] -left-10 transform rotate-12 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#FF5E00] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introDesignSystems')}</span>
+              </div>
+            </div>
+            
+            {/* Mobile/Tablet View - Below Text */}
+            <div className="flex flex-wrap justify-center gap-4 mt-12 lg:hidden">
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#FFD500] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introStrategy')}</span>
+              </div>
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#474747] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introUIUX')}</span>
+              </div>
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#FF45AB] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introPrototyping')}</span>
+              </div>
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#52FF69] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introAnimation')}</span>
+              </div>
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#05A9FF] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introResearch')}</span>
+              </div>
+              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+                <div className="w-[34px] h-[34px] bg-[#FF5E00] rounded-full"></div>
+                <span className="text-sm text-[#09090B]">{t('introDesignSystems')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-100 to-white opacity-60"></div>
+        <div className="max-w-[1400px] mx-auto relative z-10">
+          {/* Heading */}
+          <div className="text-center mb-10">
+            <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
+              {t('pricingBadge')}
+            </span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.25]">
+              {t('pricingTitle')}
+            </h2>
+          </div>
+
+          {/* Pricing Card */}
+          <div className="max-w-[800px] mx-auto">
+            <div className="bg-white/50 backdrop-blur-sm rounded-3xl p-10 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)]">
+              <div className="flex flex-col gap-8">
+                {/* Top Section */}
+                <div>
+                  {/* Plan Toggle */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="relative">
+                      <div className="bg-[#FF5E00] rounded-full w-11 h-6 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_3px_rgba(255,255,255,0.25)]">
+                        <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full"></div>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-normal">{t('pricingMonthly')}</span>
+                    <span className="text-2xl font-normal text-black/25">{t('pricingCustom')}</span>
+                  </div>
+                  
+                  {/* Price */}
+                  <div className="flex items-baseline gap-1 mb-6">
+                    <span className="text-[56px] font-normal leading-[1.36] tracking-[-0.065em]">{t('pricingPrice')}</span>
+                    <span className="text-[54px] font-light leading-[1.4] tracking-[-0.067em] text-black/25">{t('pricingPerMonth')}</span>
+                  </div>
+                  
+                  {/* Booking Badge */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1.5 h-1.5 bg-[#0CB300] rounded-full"></div>
+                    <span className="text-sm font-bold text-black/50">{t('pricingBookingOpen')}</span>
+                  </div>
+                  
+                  {/* CTA Button */}
+                  <div className="bg-white rounded-[33px] p-2 inline-block">
+                    <button className="bg-[#09090B] text-white px-6 py-3 border-none rounded-full font-bold text-[15px] cursor-pointer shadow-[24px_24px_74.67px_-2.5px_rgba(0,0,0,0.18),inset_0px_-16px_48px_0px_rgba(0,0,0,1)]">
+                      {t('pricingBookCall')}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Features Section */}
+                <div className="bg-white/75 backdrop-blur-sm rounded-xl p-8">
+                  <h3 className="text-lg font-bold mb-4">{t('pricingWhatsIncluded')}</h3>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-black/50">{t('pricingUnlimitedRequests')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-black/50">{t('pricingFastTurnaround')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-black/50">{t('pricingFixedMonthlyRate')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-black/50">{t('pricingAsyncCommunication')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-black/50">{t('pricingFlexibleScope')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm text-black/50">{t('pricingPauseAnytime')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Why Choose Us */}
+            <div className="mt-8 grid grid-cols-3 gap-3">
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason1')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason2')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason3')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason4')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason5')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason6')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason7')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason8')}</span>
+              </div>
+              <div className="flex items-center gap-2 opacity-50">
+                <div className="w-5 h-5"></div>
+                <span className="text-xs text-black/50">{t('whyChooseReason9')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-20">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Heading */}
+          <div className="text-center mb-16">
+            <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
+              {t('faqBadge')}
+            </span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.25]">
+              {t('faqTitle')}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
+            {/* FAQ Questions */}
+            <div className="space-y-0">
+              {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                <div key={num} className="border-b border-black/25 py-9">
+                  <div className="flex items-center justify-between cursor-pointer">
+                    <h3 className="text-2xl font-normal">{t(`faqQuestion${num}` as any)}</h3>
+                    <div className="w-9 h-9 flex items-center justify-center">
+                      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                        <path d="M18 12V24M12 18H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Contact Card - Sticky */}
+            <div className="lg:w-[600px]">
+              <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-10 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)] lg:sticky lg:top-24">
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)]"></div>
+                  <div>
+                    <h3 className="text-2xl font-normal mb-1">{t('faqHaveQuestions')}</h3>
+                    <p className="text-2xl font-normal">{t('faqBookCall')}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-[33px] p-2 mb-6">
+                  <button className="w-full bg-[#09090B] text-white px-6 py-3 border-none rounded-full font-bold text-[15px] cursor-pointer shadow-[24px_24px_74.67px_-2.5px_rgba(0,0,0,0.18),inset_0px_-16px_48px_0px_rgba(0,0,0,1)]">
+                    {t('faqBookButton')}
+                  </button>
+                </div>
+                
+                <p className="text-center text-sm">
+                  <span className="text-black/50">{t('faqEmailText')}</span>
+                  <a href={`mailto:${t('faqEmail')}`} className="text-[#FF2600] font-bold no-underline">{t('faqEmail')}</a>
+                </p>
               </div>
             </div>
           </div>
