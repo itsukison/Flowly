@@ -1,25 +1,46 @@
-# Flowly Landing Page - Next.js
+# Flowly - Japan-First CRM Platform
 
-A modern, responsive landing page for Flowly built with Next.js 16, Tailwind CSS, and Framer Motion. Flowly is an AI support agent platform designed for building exceptional customer experiences.
+A modern, responsive CRM platform built with Next.js 16, Tailwind CSS, Supabase, and Framer Motion. Flowly is a Japanese-first CRM that automatically enriches customer data, eliminates duplicates, and adapts to how Japanese businesses actually work.
 
-## Features
+**Current Phase**: Phase 1 - Landing Page Rebrand + Supabase Auth Setup
 
-- **Responsive Design**: Fully responsive layout that works on mobile, tablet, and desktop
+## Core Features (Planned)
+
+### MVP Features
+- **Smart Data Import**: Drag-and-drop Excel/CSV with AI column mapping
+- **Automatic Deduplication**: Real-time duplicate detection with merge suggestions
+- **Contact Enrichment**: One-click enrichment for missing emails, phone numbers
+- **Customer Status Tracking**: Visual kanban board with customizable stages
+- **Flexible Custom Forms**: Add/remove fields without IT help
+- **Simple Search & Filters**: Universal search with saved filter combinations
+
+### Current Implementation
+- **Responsive Landing Page**: Fully responsive layout that works on mobile, tablet, and desktop
 - **Internationalization**: Built-in language toggle supporting English and Japanese
-- **Custom Animations**: 
-  - Slideshow component with auto-rotating images
-  - Ticker component with scrolling text
-  - Noise effect background using canvas
-- **Modern UI**: Clean design with gradient backgrounds, glassmorphism effects, and smooth transitions
-- **Optimized Performance**: Built with Next.js for optimal loading and SEO
+- **Custom Animations**: Slideshow, ticker, and noise effect components
+- **Modern UI**: Clean design following styling.md guidelines
+- **Supabase Auth**: Sign up, login, logout functionality (Phase 1)
 
 ## Tech Stack
 
+### Frontend
 - **Next.js 16**: React framework with App Router
+- **React 19**: Latest React features
+- **TypeScript**: Type-safe development
 - **Tailwind CSS 4**: Utility-first CSS framework
 - **Framer Motion**: Animation library
-- **TypeScript**: Type-safe development
-- **Inter Font**: Modern, clean typography
+- **Geist Font**: Modern, clean typography
+
+### Backend (Phase 1+)
+- **Supabase**: Postgres + Auth + Storage + Edge Functions
+- **PostgreSQL**: Database with Row-Level Security (RLS)
+- **pg_trgm**: Fuzzy matching for Japanese text (Phase 2+)
+
+### Future Stack
+- **Inngest/Upstash**: Queue system for enrichment jobs
+- **SheetJS**: Excel/CSV parsing
+- **Sentry**: Error tracking
+- **Vercel Analytics**: Performance monitoring
 
 ## Getting Started
 
