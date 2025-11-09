@@ -23,19 +23,8 @@ export default async function DashboardPage() {
     .single()
 
   if (!userProfile?.organization_id) {
-    // User doesn't have an organization yet - redirect to setup
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#09090B] mb-4">
-            組織のセットアップが必要です
-          </h1>
-          <p className="text-[#71717B] mb-6">
-            まず組織を作成してください
-          </p>
-        </div>
-      </div>
-    )
+    // User doesn't have an organization yet - redirect to onboarding
+    redirect('/onboarding')
   }
 
   const stats = await getDashboardStats(userProfile.organization_id)

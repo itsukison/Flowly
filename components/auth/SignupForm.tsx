@@ -68,7 +68,7 @@ export default function SignupForm({ lang = 'ja' }: SignupFormProps) {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/onboarding`,
       },
     });
 

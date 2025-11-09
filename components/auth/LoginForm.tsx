@@ -47,6 +47,7 @@ export default function LoginForm({ lang = 'ja' }: LoginFormProps) {
       setError(error.message);
       setLoading(false);
     } else {
+      // Redirect to dashboard - it will handle org check and redirect to onboarding if needed
       router.push('/dashboard');
       router.refresh();
     }
