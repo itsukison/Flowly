@@ -2,7 +2,7 @@
 
 A modern, responsive CRM platform built with Next.js 16, Tailwind CSS, Supabase, and Framer Motion. Flowly is a Japanese-first CRM that automatically enriches customer data, eliminates duplicates, and adapts to how Japanese businesses actually work.
 
-**Current Phase**: Phase 1 - Landing Page Rebrand + Supabase Auth Setup
+**Current Phase**: Phase 3 Complete - Dashboard + Customer Management Live!
 
 ## Core Features (Planned)
 
