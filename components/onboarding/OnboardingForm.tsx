@@ -1,52 +1,50 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { Building2 } from 'lucide-react'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Building2 } from "lucide-react";
 
 interface OnboardingFormProps {
-  userId: string
+  userId: string;
 }
 
 export default function OnboardingForm({ userId }: OnboardingFormProps) {
-  const [organizationName, setOrganizationName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const router = useRouter()
-  const supabase = createClient()
+  const [organizationName, setOrganizationName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: organizationName.trim(),
-        })
-        .select()
-        .single()
+      // Call server-side API route that uses service role to bypass RLS
+      const response = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          organizationName: organizationName.trim(),
+        }),
+      });
 
-      if (orgError) throw orgError
+      const data = await response.json();
 
-      // Update user with organization_id using secure function to avoid RLS recursion
-      const { error: userError } = await supabase
-        .rpc('set_user_organization', { org_id: org.id })
-
-      if (userError) throw userError
+      if (!response.ok) {
+        throw new Error(data.error || "組織の作成に失敗しました");
+      }
 
       // Success - redirect to dashboard
-      router.push('/dashboard')
-      router.refresh()
+      router.push("/dashboard");
+      router.refresh();
     } catch (err: any) {
-      setError(err.message || '組織の作成に失敗しました')
-      setLoading(false)
+      setError(err.message || "組織の作成に失敗しました");
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -74,9 +72,7 @@ export default function OnboardingForm({ userId }: OnboardingFormProps) {
             placeholder="例: 株式会社サンプル"
           />
         </div>
-        <p className="text-xs text-[#71717B]">
-          後で変更できます
-        </p>
+        <p className="text-xs text-[#71717B]">後で変更できます</p>
       </div>
 
       <button
@@ -84,8 +80,8 @@ export default function OnboardingForm({ userId }: OnboardingFormProps) {
         disabled={loading || !organizationName.trim()}
         className="bg-[#09090B] text-white px-6 py-3 rounded-full font-bold text-base hover:bg-[#27272A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0px_4px_20px_rgba(0,0,0,0.15)]"
       >
-        {loading ? '作成中...' : '組織を作成して開始'}
+        {loading ? "作成中..." : "組織を作成して開始"}
       </button>
     </form>
-  )
+  );
 }
