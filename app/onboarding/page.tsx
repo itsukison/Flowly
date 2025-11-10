@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import OnboardingForm from '@/components/onboarding/OnboardingForm'
+import Header from '@/components/Header'
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
@@ -14,11 +15,17 @@ export default async function OnboardingPage() {
   }
 
   // Check if user already has an organization
-  const { data: userProfile } = await supabase
+  // This uses the "users_select_own_profile" RLS policy which allows viewing own profile
+  const { data: userProfile, error } = await supabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)
     .single()
+
+  // If there's an error, log it but don't block (user might not exist in users table yet)
+  if (error) {
+    console.error('Error checking user organization:', error)
+  }
 
   if (userProfile?.organization_id) {
     // Already has organization, go to dashboard
@@ -26,6 +33,8 @@ export default async function OnboardingPage() {
   }
 
   return (
+    <>
+    <Header />
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
@@ -40,5 +49,6 @@ export default async function OnboardingPage() {
         <OnboardingForm userId={user.id} />
       </div>
     </div>
+    </>
   )
 }
