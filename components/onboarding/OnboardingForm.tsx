@@ -33,11 +33,9 @@ export default function OnboardingForm({ userId }: OnboardingFormProps) {
 
       if (orgError) throw orgError
 
-      // Update user with organization_id
+      // Update user with organization_id using secure function to avoid RLS recursion
       const { error: userError } = await supabase
-        .from('users')
-        .update({ organization_id: org.id })
-        .eq('id', userId)
+        .rpc('set_user_organization', { org_id: org.id })
 
       if (userError) throw userError
 

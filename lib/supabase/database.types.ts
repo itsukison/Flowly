@@ -251,7 +251,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
-          organization_id: string
+          organization_id: string | null
           role: string
           updated_at: string
         }
@@ -260,7 +260,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
-          organization_id: string
+          organization_id?: string | null
           role?: string
           updated_at?: string
         }
@@ -269,7 +269,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           role?: string
           updated_at?: string
         }
@@ -300,6 +300,7 @@ export type Database = {
         }[]
       }
       normalize_phone: { Args: { phone: string }; Returns: string }
+      set_user_organization: { Args: { org_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
