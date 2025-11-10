@@ -6,8 +6,11 @@ import {
   LayoutDashboard, 
   Users, 
   Settings,
-  KanbanSquare
+  KanbanSquare,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
+import { useSidebar } from '@/contexts/SidebarContext'
 
 const navigation = [
   { name: 'ダッシュボード', href: '/dashboard', icon: LayoutDashboard },
@@ -18,12 +21,34 @@ const navigation = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
+  const { isCollapsed, toggleCollapse } = useSidebar()
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col md:pt-16">
+      <aside 
+        className={`
+          hidden md:fixed md:inset-y-0 md:flex md:flex-col md:pt-16 transition-all duration-300 ease-in-out
+          ${isCollapsed ? 'md:w-16' : 'md:w-64'}
+        `}
+      >
         <div className="flex flex-col flex-grow bg-white border-r border-[#E4E4E7] overflow-y-auto">
+          {/* Toggle Button */}
+          <div className={`px-4 py-4 border-b border-[#E4E4E7] ${isCollapsed ? 'flex justify-center' : 'flex justify-end'}`}>
+            <button
+              onClick={toggleCollapse}
+              className="p-2 hover:bg-[#F4F4F5] rounded-lg transition-colors"
+              title={isCollapsed ? 'サイドバーを展開' : 'サイドバーを折りたたむ'}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="w-5 h-5 text-[#71717B]" />
+              ) : (
+                <ChevronLeft className="w-5 h-5 text-[#71717B]" />
+              )}
+            </button>
+          </div>
+
+          {/* Navigation */}
           <nav className="flex-1 px-4 py-8 space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href
@@ -39,10 +64,16 @@ export default function DashboardSidebar() {
                       ? 'bg-[#09090B] text-white' 
                       : 'text-[#71717B] hover:bg-[#F4F4F5] hover:text-[#09090B]'
                     }
+                    ${isCollapsed ? 'justify-center' : ''}
                   `}
+                  title={isCollapsed ? item.name : undefined}
                 >
-                  <Icon className="w-5 h-5" />
-                  {item.name}
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <span className="whitespace-nowrap overflow-hidden">
+                      {item.name}
+                    </span>
+                  )}
                 </Link>
               )
             })}

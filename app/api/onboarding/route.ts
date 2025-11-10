@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 
 export async function POST(request: Request) {
   try {
@@ -60,11 +61,11 @@ export async function POST(request: Request) {
     // Check if user already has an organization
     const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .select('organization_id')
+      .select('current_organization_id')
       .eq('id', userId)
       .single()
 
-    if (existingUser?.organization_id) {
+    if (existingUser?.current_organization_id) {
       return NextResponse.json(
         { error: 'User already has an organization' },
         { status: 400 }
@@ -88,14 +89,18 @@ export async function POST(request: Request) {
       )
     }
 
-    // Link user to organization
+    // Link user to organization (upsert to handle case where user record doesn't exist yet)
     const { error: userError } = await supabaseAdmin
       .from('users')
-      .update({ 
-        organization_id: organization.id,
+      .upsert({ 
+        id: userId,
+        current_organization_id: organization.id,
+        email: session.user.email,
+        role: 'owner',
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'id'
       })
-      .eq('id', userId)
 
     if (userError) {
       console.error('Error linking user to organization:', userError)
@@ -110,6 +115,19 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
+
+    // Also create entry in user_organizations junction table
+    await supabaseAdmin
+      .from('user_organizations')
+      .insert({
+        user_id: userId,
+        organization_id: organization.id,
+        role: 'owner'
+      })
+
+    // Invalidate Next.js cache for dashboard and onboarding pages
+    revalidatePath('/dashboard')
+    revalidatePath('/onboarding')
 
     return NextResponse.json({
       success: true,

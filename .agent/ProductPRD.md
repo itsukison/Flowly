@@ -83,14 +83,6 @@ Save common filter combinations
 Search results show context snippet
 Why Essential: Fast access = system gets used
 
-4. Features Explicitly NOT Included (MVP)
-❌ Email marketing integration - Users have existing tools
- ❌ Complex reporting/analytics - Too early, adds complexity
- ❌ Multi-currency accounting - Not core to CRM problem
- ❌ AI chatbot - Gimmicky, doesn't solve real pain
- ❌ Social media monitoring - Nice-to-have, not essential
- ❌ Document generation - Can add later if needed
- ❌ Time tracking - Different problem space
 
 5. User Experience Flow
 First-Time User (Onboarding - 5 minutes)
@@ -136,19 +128,6 @@ English toggle available
 Support Japanese character encoding (UTF-8)
 Handle full-width vs half-width characters
 
-7. Success Criteria (First 6 Months)
-Adoption:
-100 paying companies
-70%+ weekly active usage rate
-Average 15+ customers managed per company
-Customer Experience:
-NPS >40
-<5% churn rate
-80%+ say "saves significant time" in survey
-Core Functionality:
-90%+ successful auto-deduplications
-70%+ enrichment success rate
-<2% data quality complaints
 
 8. Go-to-Market Strategy
 Pricing (monthly):
@@ -162,33 +141,6 @@ Launch on Japanese startup communities (ProductHunt JP, Note)
 Partner with business consultants who serve SMBs
 Content marketing: "Excel卒業ガイド" (Graduate from Excel Guide)
 Positioning: "The CRM that finally works for Japanese businesses"
-
-9. Future Roadmap (Post-MVP)
-Phase 2 (Months 7-12):
-Email integration (Gmail, Outlook)
-Team collaboration features (shared notes, @mentions)
-Basic reporting (customer growth, conversion rates)
-Mobile app (currently just mobile web)
-Phase 3 (Year 2):
-Integrations marketplace (Slack, Teams, Kintone)
-AI-powered insights ("Customer X hasn't been contacted in 60 days")
-Document generation for contracts/invoices
-Advanced automations
-
-10. Open Questions
-Data sources: Which Japanese corporate databases have best coverage + affordable pricing?
-Enrichment limits: How many enrichments per month before it becomes cost-prohibitive?
-Localization depth: Do we need prefecture-specific features (e.g., Osaka vs Tokyo business practices)?
-Integration priority: After MVP, what's most requested integration?
-
-Appendix: Customer Validation
-From TikTok internship observations:
-✅ Time spent on manual data entry: 10+ hours/week per team
-✅ Duplicate customers across departments: Major pain
-✅ Missing contact info: Daily frustration
-✅ Rigid format requirements: Barrier to updates
-✅ Unclear customer status: Causes confusion
-
 
 
 

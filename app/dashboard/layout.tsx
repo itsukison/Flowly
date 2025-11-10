@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import DashboardSidebar from '@/components/dashboard/Sidebar'
 import DashboardHeader from '@/components/dashboard/Header'
+import DynamicMainContent from '@/components/dashboard/DynamicMainContent'
+import { SidebarProvider } from '@/contexts/SidebarContext'
 
 export default async function DashboardLayout({
   children,
@@ -21,19 +23,24 @@ export default async function DashboardLayout({
   // Get user profile with organization
   const { data: userProfile } = await supabase
     .from('users')
-    .select('*, organizations(*)')
+    .select(`
+      *,
+      organization:organizations!current_organization_id(*)
+    `)
     .eq('id', user.id)
     .single()
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <DashboardHeader user={user} userProfile={userProfile} />
-      <div className="flex">
-        <DashboardSidebar />
-        <main className="flex-1 ml-0 md:ml-64 pt-16">
-          {children}
-        </main>
+    <SidebarProvider>
+      <div className="min-h-screen bg-[#FAFAFA]">
+        <DashboardHeader user={user} userProfile={userProfile} />
+        <div className="flex">
+          <DashboardSidebar />
+          <DynamicMainContent>
+            {children}
+          </DynamicMainContent>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   )
 }

@@ -18,16 +18,16 @@ export default async function OnboardingPage() {
   // This uses the "users_select_own_profile" RLS policy which allows viewing own profile
   const { data: userProfile, error } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('current_organization_id')
     .eq('id', user.id)
-    .single()
+    .single() as { data: { current_organization_id: string | null } | null; error: any }
 
   // If there's an error, log it but don't block (user might not exist in users table yet)
   if (error) {
     console.error('Error checking user organization:', error)
   }
 
-  if (userProfile?.organization_id) {
+  if (userProfile?.current_organization_id) {
     // Already has organization, go to dashboard
     redirect('/dashboard')
   }

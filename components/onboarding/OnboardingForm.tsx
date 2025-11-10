@@ -37,8 +37,9 @@ export default function OnboardingForm({ userId }: OnboardingFormProps) {
         throw new Error(data.error || "組織の作成に失敗しました");
       }
 
-      // Success - use window.location for hard redirect to ensure fresh data
-      window.location.href = "/dashboard";
+      // Success - refresh router cache and redirect
+      router.refresh();
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "組織の作成に失敗しました");
       setLoading(false);

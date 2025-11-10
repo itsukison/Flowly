@@ -1,180 +1,193 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import TableSelector from './TableSelector'
 import FileUpload from './FileUpload'
-import ColumnMapper from './ColumnMapper'
-import ImportPreview from './ImportPreview'
-import DuplicateResolver from './DuplicateResolver'
+import ColumnMapping from './ColumnMapping'
+import DataPreview from './DataPreview'
 import ImportProgress from './ImportProgress'
-import ImportSummary from './ImportSummary'
-import { ParsedData } from '@/lib/utils/fileParser'
-import { ColumnMapping } from '@/lib/utils/columnMatcher'
+
+interface Table {
+  id: string
+  name: string
+  icon: string | null
+  description: string | null
+}
 
 interface ImportWizardProps {
   organizationId: string
   userId: string
+  tables: Table[]
   users: any[]
 }
 
-type Step = 'upload' | 'mapping' | 'preview' | 'duplicates' | 'importing' | 'summary'
+type Step = 'table' | 'upload' | 'mapping' | 'preview' | 'importing'
 
-export default function ImportWizard({ organizationId, userId, users }: ImportWizardProps) {
-  const [step, setStep] = useState<Step>('upload')
-  const [parsedData, setParsedData] = useState<ParsedData | null>(null)
-  const [mappings, setMappings] = useState<Record<string, string>>({})
-  const [validRows, setValidRows] = useState<any[]>([])
-  const [invalidRows, setInvalidRows] = useState<any[]>([])
-  const [duplicates, setDuplicates] = useState<any[]>([])
-  const [importResult, setImportResult] = useState<any>(null)
+export default function ImportWizard({ organizationId, userId, tables, users }: ImportWizardProps) {
+  const router = useRouter()
+  const [step, setStep] = useState<Step>('table')
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+  const [parsedData, setParsedData] = useState<any>(null)
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({})
+  const [detectionResults, setDetectionResults] = useState<any>(null)
 
-  const handleFileUploaded = (data: ParsedData) => {
+  const handleTableSelect = (table: Table) => {
+    setSelectedTable(table)
+    setStep('upload')
+  }
+
+  const handleFileUpload = (data: any) => {
     setParsedData(data)
     setStep('mapping')
   }
 
-  const handleMappingComplete = (columnMappings: ColumnMapping[]) => {
-    const mappingObj: Record<string, string> = {}
-    columnMappings.forEach(m => {
-      if (m.targetField) {
-        mappingObj[m.sourceColumn] = m.targetField
-      }
-    })
-    setMappings(mappingObj)
+  const handleMappingComplete = (mapping: Record<string, string>) => {
+    setColumnMapping(mapping)
+    // Run detection
+    detectIssues(parsedData.data, mapping)
     setStep('preview')
   }
 
-  const handlePreviewComplete = (valid: any[], invalid: any[]) => {
-    setValidRows(valid)
-    setInvalidRows(invalid)
-    setStep('duplicates')
+  const detectIssues = async (data: any[], mapping: Record<string, string>) => {
+    // Detect duplicates and missing data
+    const duplicates: any[] = []
+    const missingEmail: any[] = []
+    const missingPhone: any[] = []
+
+    data.forEach((row, index) => {
+      // Check for missing email
+      const emailField = Object.keys(mapping).find(k => mapping[k] === 'email')
+      if (emailField && !row[emailField]) {
+        missingEmail.push({ index, row })
+      }
+
+      // Check for missing phone
+      const phoneField = Object.keys(mapping).find(k => mapping[k] === 'phone')
+      if (phoneField && !row[phoneField]) {
+        missingPhone.push({ index, row })
+      }
+
+      // Simple duplicate detection by name
+      const nameField = Object.keys(mapping).find(k => mapping[k] === 'name')
+      if (nameField && row[nameField]) {
+        const duplicateIndex = data.findIndex((r, i) => 
+          i !== index && r[nameField]?.toLowerCase() === row[nameField]?.toLowerCase()
+        )
+        if (duplicateIndex !== -1 && duplicateIndex < index) {
+          duplicates.push({ index, row, duplicateOf: duplicateIndex })
+        }
+      }
+    })
+
+    setDetectionResults({
+      duplicates,
+      missingEmail,
+      missingPhone,
+      totalRows: data.length,
+    })
   }
 
-  const handleDuplicatesResolved = (rowsToImport: any[], dupsFound: any[]) => {
-    setValidRows(rowsToImport)
-    setDuplicates(dupsFound)
+  const handleImport = async (options: { deduplicate: boolean; enrich: boolean }) => {
     setStep('importing')
-  }
 
-  const handleImportComplete = (result: any) => {
-    setImportResult(result)
-    setStep('summary')
-  }
+    try {
+      const response = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table_id: selectedTable?.id,
+          organization_id: organizationId,
+          user_id: userId,
+          data: parsedData.data,
+          mapping: columnMapping,
+          options,
+        }),
+      })
 
-  const handleStartOver = () => {
-    setParsedData(null)
-    setMappings({})
-    setValidRows([])
-    setInvalidRows([])
-    setDuplicates([])
-    setImportResult(null)
-    setStep('upload')
+      if (!response.ok) throw new Error('Import failed')
+
+      // Redirect to table view
+      router.push(`/dashboard/tables/${selectedTable?.id}`)
+    } catch (error) {
+      console.error('Import error:', error)
+      alert('インポートに失敗しました')
+      setStep('preview')
+    }
   }
 
   return (
-    <div>
+    <div className="bg-white border border-[#E4E4E7] rounded-2xl overflow-hidden">
       {/* Progress Steps */}
-      <div className="mb-8">
+      <div className="border-b border-[#E4E4E7] px-6 py-4">
         <div className="flex items-center justify-between">
           {[
-            { key: 'upload', label: 'ファイル選択' },
+            { key: 'table', label: 'テーブル選択' },
+            { key: 'upload', label: 'ファイル' },
             { key: 'mapping', label: '列マッピング' },
             { key: 'preview', label: 'プレビュー' },
-            { key: 'duplicates', label: '重複確認' },
-            { key: 'importing', label: 'インポート' },
-            { key: 'summary', label: '完了' },
-          ].map((s, index) => {
-            const stepIndex = ['upload', 'mapping', 'preview', 'duplicates', 'importing', 'summary'].indexOf(step)
-            const currentIndex = ['upload', 'mapping', 'preview', 'duplicates', 'importing', 'summary'].indexOf(s.key)
-            const isActive = currentIndex === stepIndex
-            const isCompleted = currentIndex < stepIndex
-
-            return (
-              <div key={s.key} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-1">
-                  <div
-                    className={`
-                      w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm mb-2
-                      ${isActive ? 'bg-[#09090B] text-white' : ''}
-                      ${isCompleted ? 'bg-[#0CB300] text-white' : ''}
-                      ${!isActive && !isCompleted ? 'bg-[#F4F4F5] text-[#71717B]' : ''}
-                    `}
-                  >
-                    {isCompleted ? '✓' : index + 1}
-                  </div>
-                  <span
-                    className={`
-                      text-xs text-center hidden md:block
-                      ${isActive ? 'text-[#09090B] font-semibold' : 'text-[#71717B]'}
-                    `}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-                {index < 5 && (
-                  <div
-                    className={`
-                      h-0.5 flex-1 mx-2
-                      ${isCompleted ? 'bg-[#0CB300]' : 'bg-[#E4E4E7]'}
-                    `}
-                  />
-                )}
+          ].map((s, index) => (
+            <div key={s.key} className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                  step === s.key
+                    ? 'bg-[#09090B] text-white'
+                    : ['table', 'upload', 'mapping', 'preview'].indexOf(step) > index
+                    ? 'bg-green-600 text-white'
+                    : 'bg-[#F4F4F5] text-[#71717B]'
+                }`}
+              >
+                {['table', 'upload', 'mapping', 'preview'].indexOf(step) > index ? '✓' : index + 1}
               </div>
-            )
-          })}
+              <span className="ml-2 text-sm font-medium text-[#09090B] hidden md:inline">
+                {s.label}
+              </span>
+              {index < 3 && (
+                <div className="w-12 md:w-24 h-0.5 bg-[#E4E4E7] mx-2" />
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Step Content */}
-      <div className="bg-white border border-[#E4E4E7] rounded-2xl p-6 md:p-8">
-        {step === 'upload' && (
-          <FileUpload onFileUploaded={handleFileUploaded} />
+      <div className="p-6">
+        {step === 'table' && (
+          <TableSelector
+            tables={tables}
+            onSelect={handleTableSelect}
+            organizationId={organizationId}
+          />
         )}
 
-        {step === 'mapping' && parsedData && (
-          <ColumnMapper
-            headers={parsedData.headers}
-            sampleRows={parsedData.rows.slice(0, 3)}
+        {step === 'upload' && selectedTable && (
+          <FileUpload
+            onUpload={handleFileUpload}
+            onBack={() => setStep('table')}
+          />
+        )}
+
+        {step === 'mapping' && parsedData && selectedTable && (
+          <ColumnMapping
+            data={parsedData}
+            tableId={selectedTable.id}
             onComplete={handleMappingComplete}
             onBack={() => setStep('upload')}
           />
         )}
 
-        {step === 'preview' && parsedData && (
-          <ImportPreview
-            rows={parsedData.rows}
-            mappings={mappings}
-            organizationId={organizationId}
-            userId={userId}
-            onComplete={handlePreviewComplete}
+        {step === 'preview' && detectionResults && (
+          <DataPreview
+            data={parsedData.data}
+            mapping={columnMapping}
+            detectionResults={detectionResults}
+            onImport={handleImport}
             onBack={() => setStep('mapping')}
           />
         )}
 
-        {step === 'duplicates' && (
-          <DuplicateResolver
-            rows={validRows}
-            organizationId={organizationId}
-            userId={userId}
-            onComplete={handleDuplicatesResolved}
-            onBack={() => setStep('preview')}
-          />
-        )}
-
         {step === 'importing' && (
-          <ImportProgress
-            rows={validRows}
-            organizationId={organizationId}
-            userId={userId}
-            onComplete={handleImportComplete}
-          />
-        )}
-
-        {step === 'summary' && importResult && (
-          <ImportSummary
-            result={importResult}
-            totalRows={parsedData?.totalRows || 0}
-            onStartOver={handleStartOver}
-          />
+          <ImportProgress />
         )}
       </div>
     </div>
