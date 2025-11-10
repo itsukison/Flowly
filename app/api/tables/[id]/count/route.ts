@@ -3,9 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -16,7 +17,7 @@ export async function GET(
     const { count, error } = await supabase
       .from('customers')
       .select('*', { count: 'exact', head: true })
-      .eq('table_id', params.id)
+      .eq('table_id', id)
 
     if (error) throw error
 

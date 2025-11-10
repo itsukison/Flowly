@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       headers.join(','),
       ...customers.map(customer =>
         headers.map(header => {
-          const value = customer[header]
+          const value = customer[header as keyof typeof customer]
           if (value === null || value === undefined) return ''
           if (typeof value === 'string' && value.includes(',')) {
             return `"${value.replace(/"/g, '""')}"`

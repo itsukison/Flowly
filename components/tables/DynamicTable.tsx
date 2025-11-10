@@ -13,13 +13,13 @@ interface Column {
   label: string
   type: string
   options: any
-  is_required: boolean
+  is_required: boolean | null
 }
 
 interface Status {
   id: string
   name: string
-  color: string
+  color: string | null
 }
 
 interface Customer {
@@ -152,8 +152,8 @@ export default function DynamicTable({ columns, statuses, customers, tableId }: 
                       <span
                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
                         style={{
-                          backgroundColor: `${statuses.find(s => s.name === customer.status)?.color}20`,
-                          color: statuses.find(s => s.name === customer.status)?.color,
+                          backgroundColor: `${statuses.find(s => s.name === customer.status)?.color || '#71717B'}20`,
+                          color: statuses.find(s => s.name === customer.status)?.color || '#71717B',
                         }}
                       >
                         {customer.status}

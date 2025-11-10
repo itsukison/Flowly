@@ -30,11 +30,11 @@ export default async function CustomersPage({
   // Get user's organization
   const { data: userProfile } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('current_organization_id')
     .eq('id', user.id)
     .single()
 
-  if (!userProfile?.organization_id) {
+  if (!userProfile?.current_organization_id) {
     redirect('/dashboard')
   }
 
@@ -45,7 +45,7 @@ export default async function CustomersPage({
 
   // Get customers
   const { customers, total, totalPages } = await getCustomers(
-    userProfile.organization_id,
+    userProfile.current_organization_id,
     {
       search,
       status: statusFilter.length > 0 ? statusFilter : undefined,
@@ -57,7 +57,7 @@ export default async function CustomersPage({
   const { data: users } = await supabase
     .from('users')
     .select('id, full_name, email')
-    .eq('organization_id', userProfile.organization_id)
+    .eq('current_organization_id', userProfile.current_organization_id)
 
   return (
     <div className="min-h-screen pb-20 md:pb-8">
@@ -89,7 +89,7 @@ export default async function CustomersPage({
           page={page}
           totalPages={totalPages}
           currentUserId={user.id}
-          organizationId={userProfile.organization_id}
+          organizationId={userProfile.current_organization_id}
         />
       </div>
     </div>

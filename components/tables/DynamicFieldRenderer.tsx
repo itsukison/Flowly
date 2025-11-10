@@ -5,7 +5,7 @@ interface Column {
   label: string
   type: string
   options?: any
-  is_required?: boolean
+  is_required?: boolean | null
 }
 
 interface DynamicFieldRendererProps {
@@ -101,7 +101,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )
@@ -112,7 +112,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           rows={3}
           className={baseInputClass}
         />
@@ -125,7 +125,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value ? Number(e.target.value) : null)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )
@@ -137,7 +137,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )
@@ -149,7 +149,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )
@@ -161,7 +161,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )
@@ -172,7 +172,7 @@ export default function DynamicFieldRenderer({
           type="date"
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )
@@ -196,7 +196,7 @@ export default function DynamicFieldRenderer({
         <select
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         >
           <option value="">選択してください</option>
@@ -240,7 +240,7 @@ export default function DynamicFieldRenderer({
           value={value || ''}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={column.label}
-          required={column.is_required}
+          required={column.is_required || false}
           className={baseInputClass}
         />
       )

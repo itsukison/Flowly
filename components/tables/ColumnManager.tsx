@@ -11,7 +11,7 @@ interface Column {
   label: string
   type: string
   options: any
-  is_required: boolean
+  is_required: boolean | null
   display_order: number
 }
 

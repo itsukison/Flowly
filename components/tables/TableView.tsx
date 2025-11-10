@@ -12,14 +12,14 @@ interface Column {
   label: string
   type: string
   options: any
-  is_required: boolean
+  is_required: boolean | null
   display_order: number
 }
 
 interface Status {
   id: string
   name: string
-  color: string
+  color: string | null
   display_order: number
 }
 

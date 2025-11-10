@@ -162,8 +162,7 @@ export default function ImportWizard({ organizationId, userId, tables, users }: 
 
         {step === 'upload' && selectedTable && (
           <FileUpload
-            onUpload={handleFileUpload}
-            onBack={() => setStep('table')}
+            onFileUploaded={handleFileUpload}
           />
         )}
 

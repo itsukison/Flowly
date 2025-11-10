@@ -9,7 +9,7 @@ import EditStatusModal from './EditStatusModal'
 interface Status {
   id: string
   name: string
-  color: string
+  color: string | null
   display_order: number
 }
 
@@ -84,7 +84,7 @@ export default function StatusManager({ tableId, statuses: initialStatuses }: St
                   
                   <div
                     className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: status.color }}
+                    style={{ backgroundColor: status.color || '#71717B' }}
                   />
                   
                   <div className="flex-1">
