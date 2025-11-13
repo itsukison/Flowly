@@ -29,8 +29,7 @@ export default function TableList({ tables, organizationId }: TableListProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-[#09090B]">テーブル一覧</h2>
+      <div className="flex justify-end mb-6">
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 bg-[#09090B] text-white px-4 py-2 rounded-lg hover:bg-[#27272A] transition-colors"

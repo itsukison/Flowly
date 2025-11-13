@@ -1,5 +1,7 @@
 # Styling Guide - Next.js Landing Page
 
+USE SHADCN components whenever possible
+
 ## Overview
 
 This is a modern, minimalist landing page design system built with Next.js 16, React 19, Tailwind CSS 4, and Framer Motion. The design emphasizes clean aesthetics, subtle animations, and a sophisticated monochromatic color palette with vibrant gradient accents. The overall feel is professional, contemporary, and startup-focused.
