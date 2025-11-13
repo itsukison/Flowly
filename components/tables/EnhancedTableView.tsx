@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Settings,
@@ -13,6 +14,8 @@ import {
   TrendingUp,
   CheckCircle2,
   Users,
+  RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import DynamicTable from "./DynamicTable";
 import AddRecordModal from "./AddRecordModal";
@@ -57,8 +60,11 @@ export default function TableView({
   statuses,
   initialCustomers,
 }: TableViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("data");
   const [showAddRecord, setShowAddRecord] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const tabs = [
     { id: "data", label: "データ", icon: Database },
@@ -72,6 +78,62 @@ export default function TableView({
     name: status.name,
     count: initialCustomers.filter((c) => c.status === status.name).length,
   }));
+
+  const handleDeduplicate = async () => {
+    if (selectedIds.length === 0) return;
+    
+    if (!confirm(`${selectedIds.length}件のレコードから重複を検出しますか？`)) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/deduplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (!response.ok) throw new Error('Deduplication failed');
+
+      router.refresh();
+      setSelectedIds([]);
+      alert('重複検出が完了しました');
+    } catch (error) {
+      console.error('Deduplication error:', error);
+      alert('重複検出に失敗しました');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEnrich = async () => {
+    if (selectedIds.length === 0) return;
+    
+    if (!confirm(`${selectedIds.length}件のレコードをエンリッチしますか？`)) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (!response.ok) throw new Error('Enrichment failed');
+
+      router.refresh();
+      setSelectedIds([]);
+      alert('エンリッチメントをキューに追加しました');
+    } catch (error) {
+      console.error('Enrichment error:', error);
+      alert('エンリッチメントに失敗しました');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Get the icon component for the table
   const TableIcon = getIconComponent(table.icon);
@@ -207,6 +269,30 @@ export default function TableView({
                   <Filter className="w-4 h-4" />
                   フィルター
                 </button>
+                <button
+                  onClick={handleDeduplicate}
+                  disabled={selectedIds.length === 0 || isProcessing}
+                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                    selectedIds.length > 0
+                      ? 'border-[#09090B] bg-[#09090B] text-white hover:bg-[#27272A]'
+                      : 'border-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
+                  }`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  重複を削除
+                </button>
+                <button
+                  onClick={handleEnrich}
+                  disabled={selectedIds.length === 0 || isProcessing}
+                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                    selectedIds.length > 0
+                      ? 'border-[#09090B] bg-[#09090B] text-white hover:bg-[#27272A]'
+                      : 'border-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  情報を補完
+                </button>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -225,6 +311,7 @@ export default function TableView({
               statuses={statuses}
               customers={initialCustomers}
               tableId={table.id}
+              onSelectionChange={setSelectedIds}
             />
           </div>
         )}

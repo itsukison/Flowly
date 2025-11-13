@@ -5,7 +5,7 @@ import { MoreVertical, Edit, Trash2 } from 'lucide-react'
 import DynamicFieldRenderer from './DynamicFieldRenderer'
 import EditRecordModal from './EditRecordModal'
 import DeleteRecordModal from './DeleteRecordModal'
-import BulkActionBar from './BulkActionBar'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface Column {
   id: string
@@ -32,20 +32,19 @@ interface DynamicTableProps {
   statuses: Status[]
   customers: Customer[]
   tableId: string
+  onSelectionChange?: (selectedIds: string[]) => void
 }
 
-export default function DynamicTable({ columns, statuses, customers, tableId }: DynamicTableProps) {
+export default function DynamicTable({ columns, statuses, customers, tableId, onSelectionChange }: DynamicTableProps) {
   const [editingRecord, setEditingRecord] = useState<Customer | null>(null)
   const [deletingRecord, setDeletingRecord] = useState<Customer | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(new Set(customers.map(c => c.id)))
-    } else {
-      setSelectedIds(new Set())
-    }
+    const newSelected = checked ? new Set(customers.map(c => c.id)) : new Set<string>()
+    setSelectedIds(newSelected)
+    onSelectionChange?.(Array.from(newSelected))
   }
 
   const handleSelectOne = (id: string, checked: boolean) => {
@@ -56,10 +55,7 @@ export default function DynamicTable({ columns, statuses, customers, tableId }: 
       newSelected.delete(id)
     }
     setSelectedIds(newSelected)
-  }
-
-  const handleBulkActionComplete = () => {
-    setSelectedIds(new Set())
+    onSelectionChange?.(Array.from(newSelected))
   }
 
   const isAllSelected = customers.length > 0 && selectedIds.size === customers.length
@@ -85,30 +81,16 @@ export default function DynamicTable({ columns, statuses, customers, tableId }: 
 
   return (
     <>
-      {selectedIds.size > 0 && (
-        <BulkActionBar
-          selectedCount={selectedIds.size}
-          selectedIds={Array.from(selectedIds)}
-          statuses={statuses}
-          tableId={tableId}
-          onComplete={handleBulkActionComplete}
-        />
-      )}
-
       <div className="bg-white border border-[#E4E4E7] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#F4F4F5] border-b border-[#E4E4E7]">
               <tr>
                 <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) input.indeterminate = isSomeSelected
-                    }}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E4E4E7] text-[#09090B] focus:ring-[#09090B]"
+                    onCheckedChange={handleSelectAll}
+                    aria-label="すべて選択"
                   />
                 </th>
                 {columns.map((column) => (
@@ -131,11 +113,10 @@ export default function DynamicTable({ columns, statuses, customers, tableId }: 
               {customers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-[#FAFAFA] transition-colors">
                   <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={selectedIds.has(customer.id)}
-                      onChange={(e) => handleSelectOne(customer.id, e.target.checked)}
-                      className="w-4 h-4 rounded border-[#E4E4E7] text-[#09090B] focus:ring-[#09090B]"
+                      onCheckedChange={(checked) => handleSelectOne(customer.id, checked as boolean)}
+                      aria-label={`選択: ${customer.name || customer.id}`}
                     />
                   </td>
                   {columns.map((column) => (
