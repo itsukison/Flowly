@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  LayoutDashboard,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  Database,
+  Columns,
+  Settings,
+} from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useEffect, useState } from "react";
 
 const navigation = [
   { name: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
@@ -12,6 +21,59 @@ const navigation = [
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapse } = useSidebar();
+  const [tableContext, setTableContext] = useState<{
+    tableId: string;
+    tableName: string;
+    tableIcon: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // Check if we're on a table page
+    const tableMatch = pathname.match(/\/dashboard\/tables\/([^\/]+)/);
+    if (tableMatch) {
+      const tableId = tableMatch[1];
+      // Fetch table info from the page's data attribute or context
+      const tableNameEl = document.querySelector('[data-table-name]');
+      const tableIconEl = document.querySelector('[data-table-icon]');
+      
+      if (tableNameEl && tableIconEl) {
+        setTableContext({
+          tableId,
+          tableName: tableNameEl.getAttribute('data-table-name') || '',
+          tableIcon: tableIconEl.getAttribute('data-table-icon') || '',
+        });
+      }
+    } else {
+      setTableContext(null);
+    }
+  }, [pathname]);
+
+  const tableNavigation = tableContext
+    ? [
+        {
+          name: "概要",
+          href: `/dashboard/tables/${tableContext.tableId}`,
+          icon: LayoutGrid,
+        },
+        {
+          name: "データ",
+          href: `/dashboard/tables/${tableContext.tableId}/data`,
+          icon: Database,
+        },
+        {
+          name: "列の管理",
+          href: `/dashboard/tables/${tableContext.tableId}/columns`,
+          icon: Columns,
+        },
+        {
+          name: "設定",
+          href: `/dashboard/tables/${tableContext.tableId}/settings`,
+          icon: Settings,
+        },
+      ]
+    : [];
+
+  const currentNavigation = tableContext ? tableNavigation : navigation;
 
   return (
     <>
@@ -46,9 +108,21 @@ export default function DashboardSidebar() {
             </button>
           </div>
 
+          {/* Table Context Header */}
+          {tableContext && !isCollapsed && (
+            <div className="px-4 pb-4 border-b border-[#E4E4E7]">
+              <div className="text-xs font-semibold text-[#71717B] mb-2">
+                テーブル
+              </div>
+              <div className="text-sm font-bold text-[#09090B] truncate">
+                {tableContext.tableName}
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => {
+            {currentNavigation.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
 
@@ -85,7 +159,7 @@ export default function DashboardSidebar() {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E4E4E7] z-50">
         <div className="flex justify-around items-center h-16">
-          {navigation.map((item) => {
+          {currentNavigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
 

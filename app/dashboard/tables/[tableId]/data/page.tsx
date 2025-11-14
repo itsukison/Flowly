@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import TableMainView from '@/components/tables/TableMainView'
+import TableDataView from '@/components/tables/TableDataView'
 
-export default async function TablePage({ params }: { params: Promise<{ tableId: string }> }) {
+export default async function DataPage({ params }: { params: Promise<{ tableId: string }> }) {
   const supabase = await createClient()
   const { tableId } = await params
 
@@ -43,7 +43,7 @@ export default async function TablePage({ params }: { params: Promise<{ tableId:
     .order('created_at', { ascending: false })
 
   return (
-    <TableMainView
+    <TableDataView
       table={table}
       columns={columns || []}
       statuses={statuses || []}

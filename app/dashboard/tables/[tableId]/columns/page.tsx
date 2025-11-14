@@ -1,8 +1,12 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import TableMainView from '@/components/tables/TableMainView'
+import ColumnManagerWrapper from '@/components/tables/ColumnManagerWrapper'
 
-export default async function TablePage({ params }: { params: Promise<{ tableId: string }> }) {
+export default async function ColumnsPage({
+  params,
+}: {
+  params: Promise<{ tableId: string }>
+}) {
   const supabase = await createClient()
   const { tableId } = await params
 
@@ -30,24 +34,5 @@ export default async function TablePage({ params }: { params: Promise<{ tableId:
     .eq('table_id', tableId)
     .order('display_order', { ascending: true })
 
-  const { data: statuses } = await supabase
-    .from('table_statuses')
-    .select('*')
-    .eq('table_id', tableId)
-    .order('display_order', { ascending: true })
-
-  const { data: customers } = await supabase
-    .from('customers')
-    .select('*')
-    .eq('table_id', tableId)
-    .order('created_at', { ascending: false })
-
-  return (
-    <TableMainView
-      table={table}
-      columns={columns || []}
-      statuses={statuses || []}
-      customers={customers || []}
-    />
-  )
+  return <ColumnManagerWrapper tableId={tableId} columns={columns || []} />
 }
