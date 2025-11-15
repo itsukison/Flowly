@@ -43,7 +43,7 @@
 
   /* Cell Padding */
   --ht-cell-horizontal-padding: 12px;
-  --ht-cell-vertical-padding: 6px;
+  --ht-cell-vertical-padding: 2px;
 
   /* Cell Editor */
   --ht-cell-editor-border-width: 2px;
@@ -120,6 +120,14 @@
 /* Additional custom styles */
 .handsontable {
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Prevent browser back/forward navigation on horizontal scroll */
+  overscroll-behavior-x: contain;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Ensure the scrollable container also prevents overscroll */
+.handsontable .wtHolder {
+  overscroll-behavior-x: contain;
 }
 
 /* Select all checkbox styling */
@@ -128,6 +136,19 @@
   accent-color: #09090B;
   width: 16px;
   height: 16px;
+}
+
+/* Fix row header alignment */
+.handsontable .ht_clone_left th,
+.handsontable .ht_clone_top_left_corner th {
+  vertical-align: middle !important;
+  line-height: 1.5 !important;
+}
+
+/* Ensure all cells have consistent vertical alignment */
+.handsontable td,
+.handsontable th {
+  vertical-align: middle !important;
 }
 
 /* Hover effect on rows */

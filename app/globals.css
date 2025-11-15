@@ -51,8 +51,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-josefin-sans);
   --font-mono: var(--font-geist-mono);
+  --font-boldonse: "Boldonse", system-ui;
+  --font-stack-sans-notch: "Stack Sans Notch", sans-serif;
 
   --color-woodsmoke: var(--woodsmoke);
   --color-alabaster: var(--alabaster);

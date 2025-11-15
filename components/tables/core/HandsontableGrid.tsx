@@ -128,6 +128,62 @@ export default function HandsontableGrid({
     return () => window.removeEventListener('resize', updateHeight)
   }, [])
 
+  // Prevent browser back navigation when scrolling horizontally in the table
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let touchStartX = 0
+    let scrollStartX = 0
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const scrollableElement = container.querySelector('.wtHolder') as HTMLElement
+      if (scrollableElement && container.contains(e.target as Node)) {
+        touchStartX = e.touches[0].clientX
+        scrollStartX = scrollableElement.scrollLeft
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const scrollableElement = container.querySelector('.wtHolder') as HTMLElement
+      if (scrollableElement && container.contains(e.target as Node)) {
+        const touchCurrentX = e.touches[0].clientX
+        const touchDeltaX = touchStartX - touchCurrentX
+        const newScrollLeft = scrollStartX + touchDeltaX
+
+        // If we're trying to scroll within the table bounds, prevent browser navigation
+        if (newScrollLeft > 0 && newScrollLeft < scrollableElement.scrollWidth - scrollableElement.clientWidth) {
+          e.preventDefault()
+        }
+      }
+    }
+
+    const handleWheel = (e: WheelEvent) => {
+      const scrollableElement = container.querySelector('.wtHolder') as HTMLElement
+      if (scrollableElement && container.contains(e.target as Node)) {
+        const atLeftEdge = scrollableElement.scrollLeft === 0
+        const atRightEdge = scrollableElement.scrollLeft + scrollableElement.clientWidth >= scrollableElement.scrollWidth - 1
+
+        // Prevent browser navigation if scrolling horizontally within table bounds
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+          if ((e.deltaX > 0 && !atRightEdge) || (e.deltaX < 0 && !atLeftEdge)) {
+            e.preventDefault()
+          }
+        }
+      }
+    }
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('wheel', handleWheel, { passive: false })
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
+
   // Build column definitions
   const columnDefs = useMemo(() => {
     const defs: any[] = []
@@ -427,7 +483,7 @@ export default function HandsontableGrid({
           data={normalizedRecords}
           columns={columnDefs}
           colHeaders={true}
-          rowHeaders={true}
+          rowHeaders={false}
           height={tableHeight}
           width="100%"
           licenseKey="non-commercial-and-evaluation"
@@ -439,7 +495,7 @@ export default function HandsontableGrid({
           beforeRemoveRow={handleBeforeRemoveRow}
           afterRemoveRow={handleAfterRemoveRow}
           stretchH="none"
-          rowHeights={36}
+          rowHeights={28}
           colWidths={150}
           autoRowSize={false}
           autoColumnSize={false}

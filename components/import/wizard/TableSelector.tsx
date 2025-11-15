@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import CreateTableModal from '../dashboard/CreateTableModal'
+import CreateTableModal from '@/components/dashboard/CreateTableModal'
 
 interface Table {
   id: string

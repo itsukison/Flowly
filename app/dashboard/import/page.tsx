@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import ImportWizard from '@/components/import/ImportWizard'
+import ImportWizard from '@/components/import/wizard/ImportWizard'
 
 export default async function ImportPage() {
   const supabase = await createClient()
