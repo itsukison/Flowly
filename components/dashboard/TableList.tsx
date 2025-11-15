@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react'
 import { getIconComponent } from '@/lib/iconMapping'
@@ -29,15 +29,6 @@ export default function TableList({ tables, organizationId }: TableListProps) {
 
   return (
     <div>
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-[#09090B] text-white px-4 py-2 rounded-lg hover:bg-[#27272A] transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          新規作成
-        </button>
-      </div>
 
       {tables.length === 0 ? (
         <div className="bg-white border border-[#E4E4E7] rounded-2xl p-12 text-center shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
@@ -114,7 +105,7 @@ function TableCard({
   const [loading, setLoading] = useState(true)
 
   // Fetch record count on mount
-  useState(() => {
+  useEffect(() => {
     const fetchCount = async () => {
       try {
         const response = await fetch(`/api/tables/${table.id}/count`)
@@ -127,7 +118,7 @@ function TableCard({
       }
     }
     fetchCount()
-  })
+  }, [table.id])
 
   const isMenuOpen = openMenuId === table.id
   const IconComponent = getIconComponent(table.icon)

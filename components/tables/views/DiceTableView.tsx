@@ -80,7 +80,29 @@ export default function DiceTableView({
     }));
   }, [records]);
 
-  const [data, setData] = useState(normalizedRecords);
+  // Add empty placeholder rows (like Excel) to fill the screen
+  const dataWithPlaceholders = useMemo<NormalizedTableRecord[]>(() => {
+    const PLACEHOLDER_COUNT = 200;
+    const placeholders: NormalizedTableRecord[] = [];
+    
+    for (let i = 0; i < PLACEHOLDER_COUNT; i++) {
+      placeholders.push({
+        id: `temp-${i}`,
+        table_id: table.id,
+        organization_id: normalizedRecords[0]?.organization_id || '',
+        data: {},
+      } as NormalizedTableRecord);
+    }
+    
+    return [...normalizedRecords, ...placeholders];
+  }, [normalizedRecords, table.id]);
+
+  const [data, setData] = useState(dataWithPlaceholders);
+
+  // Update data when records change (e.g., after refresh)
+  useEffect(() => {
+    setData(dataWithPlaceholders);
+  }, [dataWithPlaceholders]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -138,6 +160,14 @@ export default function DiceTableView({
     return () => document.removeEventListener("click", handleSidebarToggle, true);
   }, [isSidebarOpen]);
 
+  // Helper function to check if a row is empty
+  const isRowEmpty = useCallback((record: NormalizedTableRecord) => {
+    const directFields = ["name", "email", "company", "status"] as const;
+    const hasDirectData = directFields.some(field => record[field]);
+    const hasJsonbData = Object.keys(record.data || {}).some(key => record.data[key]);
+    return !hasDirectData && !hasJsonbData;
+  }, []);
+
   // Handle data changes with auto-save
   const handleDataChange = useCallback(
     async (newData: NormalizedTableRecord[]) => {
@@ -171,21 +201,49 @@ export default function DiceTableView({
       // Find what changed by comparing with current data
       const updates: Array<{ record: NormalizedTableRecord; changes: any }> =
         [];
+      const newRecordsToCreate: Array<{ record: NormalizedTableRecord; index: number }> = [];
 
       fixedData.forEach((newRecord, index) => {
         const oldRecord = data[index];
-        if (!oldRecord || oldRecord.id !== newRecord.id) {
+        if (!oldRecord) {
+          return;
+        }
+
+        // Type guard to ensure we have id property
+        if (!('id' in oldRecord) || !('id' in newRecord)) {
+          return;
+        }
+
+        if (oldRecord.id !== newRecord.id) {
+          return;
+        }
+
+        // Check if this is a placeholder row that now has data
+        const isPlaceholder = oldRecord.id.startsWith('temp-');
+        const wasEmpty = isRowEmpty(oldRecord);
+        const hasData = !isRowEmpty(newRecord);
+
+        if (isPlaceholder && wasEmpty && hasData) {
+          // Placeholder row got data - need to create a new record
+          newRecordsToCreate.push({ record: newRecord, index });
+          return;
+        }
+
+        // Skip placeholder rows that are still empty
+        if (isPlaceholder) {
           return;
         }
 
         // Check for changes in direct fields
-        const directFields = ["name", "email", "company", "status"];
+        const directFields = ["name", "email", "company", "status"] as const;
         const directChanges: any = {};
         let hasDirectChanges = false;
 
         directFields.forEach((field) => {
-          if (oldRecord[field] !== newRecord[field]) {
-            directChanges[field] = newRecord[field];
+          const oldValue = (oldRecord as any)[field];
+          const newValue = (newRecord as any)[field];
+          if (oldValue !== newValue) {
+            directChanges[field] = newValue;
             hasDirectChanges = true;
           }
         });
@@ -216,12 +274,48 @@ export default function DiceTableView({
       // Update local state immediately for responsive UI with fixed data
       setData(fixedData);
 
-      // Save changes to API
-      if (updates.length > 0) {
+      // Save changes to API (both updates and new records)
+      if (updates.length > 0 || newRecordsToCreate.length > 0) {
         setIsSaving(true);
         setSaveStatus("saving");
 
         try {
+          // Create new records from placeholder rows
+          const createdRecords = await Promise.all(
+            newRecordsToCreate.map(async ({ record, index }) => {
+              const organizationId = normalizedRecords[0]?.organization_id;
+              if (!organizationId) {
+                throw new Error("Organization ID not found");
+              }
+
+              const payload: any = {
+                table_id: table.id,
+                organization_id: organizationId,
+                status: record.status || statuses[0]?.name || null,
+                data: record.data || {},
+              };
+
+              // Add direct fields if they exist
+              if (record.name) payload.name = record.name;
+              if (record.email) payload.email = record.email;
+              if (record.company) payload.company = record.company;
+
+              const response = await fetch(`/api/records`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to create record");
+              }
+
+              const newRecord = await response.json();
+              return { index, newRecord };
+            })
+          );
+
+          // Update existing records
           await Promise.all(
             updates.map(({ record, changes }) =>
               fetch(`/api/records/${record.id}`, {
@@ -235,6 +329,20 @@ export default function DiceTableView({
             )
           );
 
+          // Replace placeholder rows with real records in state
+          if (createdRecords.length > 0) {
+            setData((currentData) => {
+              const updated = [...currentData];
+              createdRecords.forEach(({ index, newRecord }) => {
+                updated[index] = {
+                  ...newRecord,
+                  data: (newRecord.data as Record<string, any>) || {},
+                };
+              });
+              return updated;
+            });
+          }
+
           setSaveStatus("saved");
           setTimeout(() => setSaveStatus("idle"), 2000);
         } catch (error) {
@@ -247,7 +355,7 @@ export default function DiceTableView({
         }
       }
     },
-    [data, columns]
+    [data, columns, normalizedRecords, table.id, statuses, isRowEmpty]
   );
 
   // Handle adding new rows

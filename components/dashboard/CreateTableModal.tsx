@@ -2,8 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, Check } from 'lucide-react'
+import { X, Circle, Plus, Trash2, GripVertical } from 'lucide-react'
 import { ICON_OPTIONS, getIconComponent } from '@/lib/iconMapping'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 interface CreateTableModalProps {
   organizationId: string
@@ -58,8 +62,13 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
   const [icon, setIcon] = useState('chart')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [customColumns, setCustomColumns] = useState<string[]>([])
+  const [customStatuses, setCustomStatuses] = useState<string[]>([])
+  const [editingColumnIndex, setEditingColumnIndex] = useState<number | null>(null)
+  const [editingStatusIndex, setEditingStatusIndex] = useState<number | null>(null)
 
   const currentTemplate = TEMPLATES.find(t => t.id === selectedTemplate)
+  const isCustomTemplate = selectedTemplate === 'custom'
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId)
@@ -67,8 +76,45 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
     if (template) {
       setName(template.name)
       setIcon(template.icon)
+      // For custom template, initialize with editable columns/statuses
+      if (templateId === 'custom') {
+        setCustomColumns([...template.columns])
+        setCustomStatuses([...template.statuses])
+      }
       setStep('preview')
     }
+  }
+
+  const addColumn = () => {
+    setCustomColumns([...customColumns, ''])
+    setEditingColumnIndex(customColumns.length)
+  }
+
+  const updateColumn = (index: number, value: string) => {
+    const updated = [...customColumns]
+    updated[index] = value
+    setCustomColumns(updated)
+  }
+
+  const deleteColumn = (index: number) => {
+    setCustomColumns(customColumns.filter((_, i) => i !== index))
+    if (editingColumnIndex === index) setEditingColumnIndex(null)
+  }
+
+  const addStatus = () => {
+    setCustomStatuses([...customStatuses, ''])
+    setEditingStatusIndex(customStatuses.length)
+  }
+
+  const updateStatus = (index: number, value: string) => {
+    const updated = [...customStatuses]
+    updated[index] = value
+    setCustomStatuses(updated)
+  }
+
+  const deleteStatus = (index: number) => {
+    setCustomStatuses(customStatuses.filter((_, i) => i !== index))
+    if (editingStatusIndex === index) setEditingStatusIndex(null)
   }
 
   const handleCreate = async () => {
@@ -110,7 +156,7 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
     <div className="fixed inset-0 bg-black/50 backdrop-blur-[10px] flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-[12px_12px_20px_-2px_rgba(0,0,0,0.09),6px_6px_10px_-2px_rgba(0,0,0,0.32),3px_3px_5px_-1px_rgba(0,0,0,0.41)]">
         <div className="sticky top-0 bg-white border-b border-[#E4E4E7] px-8 py-6 flex items-center justify-between rounded-t-3xl">
-          <h2 className="text-2xl font-bold text-[#09090B]">
+          <h2 className="text-xl font-bold text-[#09090B]">
             {step === 'template' && 'テンプレートを選択'}
             {step === 'preview' && 'テンプレートのプレビュー'}
             {step === 'details' && '新しいテーブル'}
@@ -139,10 +185,10 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
                       <IconComponent className="w-7 h-7 text-[#09090B] group-hover:text-white transition-colors" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-[#09090B] text-lg mb-2">
+                      <h3 className="font-bold text-[#09090B] text-base mb-1">
                         {template.name}
                       </h3>
-                      <p className="text-base text-[#71717B] leading-[1.5]">{template.description}</p>
+                      <p className="text-sm text-[#71717B] leading-[1.5]">{template.description}</p>
                     </div>
                   </button>
                 )
@@ -154,68 +200,147 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
           {step === 'preview' && currentTemplate && (
             <div className="space-y-8">
               <div className="flex items-start gap-6 p-8 bg-[#FAFAFA] rounded-2xl">
-                <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
+                <div className="w-15 h-15 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
                   {(() => {
                     const IconComponent = getIconComponent(currentTemplate.icon)
-                    return <IconComponent className="w-10 h-10 text-[#09090B]" />
+                    return <IconComponent className="w-8 h-8 text-[#09090B]" />
                   })()}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-3xl font-bold text-[#09090B] mb-3 leading-[1.25]">
+                  <h3 className="text-xl font-bold text-[#09090B] mb-2 leading-[1.25]">
                     {currentTemplate.name}
                   </h3>
-                  <p className="text-lg text-[#71717B] leading-[1.6]">{currentTemplate.details}</p>
+                  <p className="text-sm text-[#71717B] leading-[1.6]">{currentTemplate.details}</p>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#09090B] text-lg mb-4">含まれる列</h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-[#09090B] text-base">含まれる列</h4>
+                  {isCustomTemplate && (
+                    <Button
+                      onClick={addColumn}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      列を追加
+                    </Button>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {currentTemplate.columns.map((column, index) => (
+                  {(isCustomTemplate ? customColumns : currentTemplate.columns).map((column, index) => (
                     <div
                       key={index}
                       className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E4E4E7] rounded-xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
                     >
-                      <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <span className="text-base text-[#09090B]">{column}</span>
+                      <Circle className="w-4 h-4 text-[#09090B] fill-[#09090B] flex-shrink-0" />
+                      {isCustomTemplate && editingColumnIndex === index ? (
+                        <Input
+                          value={column}
+                          onChange={(e) => updateColumn(index, e.target.value)}
+                          onBlur={() => setEditingColumnIndex(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingColumnIndex(null)
+                          }}
+                          autoFocus
+                          className="h-7 text-sm"
+                        />
+                      ) : (
+                        <span
+                          className="text-sm text-[#09090B] flex-1 cursor-pointer"
+                          onClick={() => isCustomTemplate && setEditingColumnIndex(index)}
+                        >
+                          {column || '列名を入力'}
+                        </span>
+                      )}
+                      {isCustomTemplate && (
+                        <button
+                          onClick={() => deleteColumn(index)}
+                          className="p-1 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#09090B] text-lg mb-4">ステータス</h4>
-                <div className="flex flex-wrap gap-3">
-                  {currentTemplate.statuses.map((status, index) => (
-                    <span
-                      key={index}
-                      className="px-5 py-2 bg-white border border-[#E4E4E7] rounded-full text-base text-[#09090B] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-[#09090B] text-base">ステータス</h4>
+                  {isCustomTemplate && (
+                    <Button
+                      onClick={addStatus}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
                     >
-                      {status}
-                    </span>
+                      <Plus className="w-4 h-4" />
+                      ステータスを追加
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {(isCustomTemplate ? customStatuses : currentTemplate.statuses).map((status, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 px-5 py-2 bg-white border border-[#E4E4E7] rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
+                    >
+                      {isCustomTemplate && editingStatusIndex === index ? (
+                        <Input
+                          value={status}
+                          onChange={(e) => updateStatus(index, e.target.value)}
+                          onBlur={() => setEditingStatusIndex(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingStatusIndex(null)
+                          }}
+                          autoFocus
+                          className="h-7 text-sm w-32"
+                        />
+                      ) : (
+                        <span
+                          className="text-sm text-[#09090B] cursor-pointer"
+                          onClick={() => isCustomTemplate && setEditingStatusIndex(index)}
+                        >
+                          {status || 'ステータス名'}
+                        </span>
+                      )}
+                      {isCustomTemplate && (
+                        <button
+                          onClick={() => deleteStatus(index)}
+                          className="p-1 hover:bg-red-50 rounded-full transition-colors"
+                        >
+                          <X className="w-3 h-3 text-red-600" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
 
               <div className="p-6 bg-[#FAFAFA] border border-[#E4E4E7] rounded-2xl">
-                <p className="text-base text-[#09090B] leading-[1.6]">
+                <p className="text-sm text-[#09090B] leading-[1.6]">
                   作成後に列やステータスを自由に追加・編集できます
                 </p>
               </div>
 
               <div className="flex gap-4">
-                <button
+                <Button
                   onClick={() => setStep('template')}
-                  className="flex-1 px-6 py-4 border border-[#E4E4E7] rounded-xl text-base font-semibold hover:bg-[#F4F4F5] transition-colors"
+                  variant="outline"
+                  className="flex-1 h-12 text-base"
                 >
                   戻る
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setStep('details')}
-                  className="flex-1 px-6 py-4 bg-[#09090B] text-white rounded-xl text-base font-bold hover:bg-[#27272A] transition-colors shadow-[0px_4px_20px_rgba(0,0,0,0.15)]"
+                  className="flex-1 h-12 text-base"
                 >
                   次へ
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -253,12 +378,12 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
                 <label className="block text-base font-bold text-[#09090B] mb-3">
                   テーブル名 <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="例: 顧客リスト"
-                  className="w-full px-5 py-4 text-base border border-[#E4E4E7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#09090B] focus:border-[#09090B] transition-all"
+                  className="text-base h-12"
                 />
               </div>
 
@@ -266,12 +391,12 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
                 <label className="block text-base font-bold text-[#09090B] mb-3">
                   説明（任意）
                 </label>
-                <textarea
+                <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="このテーブルの用途を説明してください"
                   rows={4}
-                  className="w-full px-5 py-4 text-base border border-[#E4E4E7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#09090B] focus:border-[#09090B] transition-all leading-[1.6]"
+                  className="text-base"
                 />
               </div>
 
@@ -282,22 +407,23 @@ export default function CreateTableModal({ organizationId, onClose }: CreateTabl
               )}
 
               <div className="flex gap-4 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => setStep('preview')}
-                  className="flex-1 px-6 py-4 border border-[#E4E4E7] rounded-xl text-base font-semibold hover:bg-[#F4F4F5] transition-colors"
+                  variant="outline"
                   disabled={loading}
+                  className="flex-1 h-12 text-base"
                 >
                   戻る
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleCreate}
                   disabled={loading || !name.trim()}
-                  className="flex-1 px-6 py-4 bg-[#09090B] text-white rounded-xl text-base font-bold hover:bg-[#27272A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0px_4px_20px_rgba(0,0,0,0.15)]"
+                  className="flex-1 h-12 text-base"
                 >
                   {loading ? '作成中...' : '作成'}
-                </button>
+                </Button>
               </div>
             </div>
           )}

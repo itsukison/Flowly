@@ -15,7 +15,7 @@ export async function GET(
     }
 
     const { count, error } = await supabase
-      .from('customers')
+      .from('records')
       .select('*', { count: 'exact', head: true })
       .eq('table_id', id)
 

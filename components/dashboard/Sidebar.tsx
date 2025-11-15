@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Home,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
@@ -15,7 +15,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useEffect, useState } from "react";
 
 const dashboardNavigation = [
-  { name: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
+  { name: "ダッシュボード", href: "/dashboard", icon: Home },
 ];
 
 export default function DashboardSidebar() {
@@ -114,7 +114,7 @@ export default function DashboardSidebar() {
         <div className="flex flex-col flex-grow bg-white border-r border-[#E4E4E7] overflow-y-auto">
           {/* Toggle Button */}
           <div
-            className={`px-4 py-4 ${
+            className={`px-4 py-2 ${
               isCollapsed ? "flex justify-center" : "flex justify-end"
             }`}
           >
@@ -136,7 +136,7 @@ export default function DashboardSidebar() {
           </div>
 
           {/* Dashboard Navigation */}
-          <nav className="px-4 pt-6 pb-4 space-y-2">
+          <nav className="px-4 pt-2 pb-4 space-y-2">
             {dashboardNavigation.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
