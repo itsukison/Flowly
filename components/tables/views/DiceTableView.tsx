@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
 import { DataGridRowHeightMenu } from "@/components/data-grid/data-grid-row-height-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Json } from "@/lib/supabase/database.types";
@@ -69,6 +70,7 @@ export default function DiceTableView({
   records,
 }: DiceTableViewProps) {
   const router = useRouter();
+  const { isCollapsed, toggleCollapse } = useSidebar();
 
   // Normalize records to ensure data field exists
   const normalizedRecords = useMemo<NormalizedTableRecord[]>(() => {
@@ -106,6 +108,34 @@ export default function DiceTableView({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSidebarOpen]);
+
+  // Force sidebar to be expanded when open on data page
+  useEffect(() => {
+    if (isSidebarOpen && isCollapsed) {
+      toggleCollapse();
+    }
+  }, [isSidebarOpen, isCollapsed, toggleCollapse]);
+
+  // Override sidebar collapse behavior for data page
+  // When sidebar is open, intercept collapse button clicks to close sidebar instead
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const handleSidebarToggle = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Check if click is on the collapse button (ChevronLeft icon or its parent button)
+      const button = target.closest('button[title*="折りたたむ"]');
+      if (button) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsSidebarOpen(false);
+      }
+    };
+
+    // Use capture phase to intercept before the sidebar's own handler
+    document.addEventListener("click", handleSidebarToggle, true);
+    return () => document.removeEventListener("click", handleSidebarToggle, true);
   }, [isSidebarOpen]);
 
   // Handle data changes with auto-save
@@ -442,7 +472,7 @@ export default function DiceTableView({
 
   return (
     <>
-      {/* Sidebar Overlay */}
+      {/* Sidebar - Only shown when open, positioned below header */}
       {isSidebarOpen && (
         <>
           {/* Backdrop */}
@@ -451,21 +481,10 @@ export default function DiceTableView({
             onClick={() => setIsSidebarOpen(false)}
           />
 
-          {/* Sidebar */}
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#E4E4E7] shadow-xl transform transition-transform">
-            {/* Close button */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
-              <h2 className="text-sm font-semibold text-[#09090B]">メニュー</h2>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-1.5 hover:bg-[#F4F4F5] rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-[#71717B]" />
-              </button>
-            </div>
-
+          {/* Sidebar - positioned below header (top-16 = 64px header height) */}
+          <div className="fixed top-16 bottom-0 left-0 z-50 w-64 bg-white border-r border-[#E4E4E7] shadow-xl">
             {/* Sidebar content */}
-            <div className="overflow-y-auto h-[calc(100vh-57px)]">
+            <div className="overflow-y-auto h-full">
               <DashboardSidebar />
             </div>
           </div>
