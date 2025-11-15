@@ -68,10 +68,12 @@ export default function HandsontableGrid({
 }: HandsontableGridProps) {
   const router = useRouter()
   const hotRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingRecord, setEditingRecord] = useState<TableRecord | null>(null)
   const [deletingRecord, setDeletingRecord] = useState<TableRecord | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [tableHeight, setTableHeight] = useState(600)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Ensure all records have a data object initialized
@@ -109,6 +111,22 @@ export default function HandsontableGrid({
   useEffect(() => {
     onSelectionChange?.(Array.from(selectedIds))
   }, [selectedIds, onSelectionChange])
+
+  // Calculate table height based on container
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const height = containerRef.current.clientHeight
+        if (height > 0) {
+          setTableHeight(height)
+        }
+      }
+    }
+
+    updateHeight()
+    window.addEventListener('resize', updateHeight)
+    return () => window.removeEventListener('resize', updateHeight)
+  }, [])
 
   // Build column definitions
   const columnDefs = useMemo(() => {
@@ -384,12 +402,17 @@ export default function HandsontableGrid({
 
   // Add afterInit hook to log when table is initialized
   const handleAfterInit = useCallback(() => {
-    console.log('HotTable initialized')
+    console.log('✅ HotTable initialized successfully!')
+    console.log('Instance:', hotRef.current)
+    if (hotRef.current) {
+      console.log('Row count:', hotRef.current.hotInstance?.countRows())
+      console.log('Col count:', hotRef.current.hotInstance?.countCols())
+    }
   }, [])
 
   return (
     <>
-      <div className="relative w-full" style={{ height: 'calc(100vh - 200px)' }}>
+      <div ref={containerRef} className="relative w-full h-full">
         {isSaving && (
           <div className="absolute top-2 right-2 z-50 bg-[#09090B] text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2">
             <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -405,7 +428,7 @@ export default function HandsontableGrid({
           columns={columnDefs}
           colHeaders={true}
           rowHeaders={true}
-          height="100%"
+          height={tableHeight}
           width="100%"
           licenseKey="non-commercial-and-evaluation"
           afterInit={handleAfterInit}
@@ -420,6 +443,8 @@ export default function HandsontableGrid({
           colWidths={150}
           autoRowSize={false}
           autoColumnSize={false}
+          fixedColumnsStart={0}
+          fixedRowsTop={0}
           contextMenu={{
             items: {
               row_above: {

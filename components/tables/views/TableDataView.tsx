@@ -156,7 +156,7 @@ export default function TableDataView({ table, columns, statuses, records }: Tab
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 px-6 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col">
         <HandsontableGrid
           columns={columns}
           statuses={statuses}
