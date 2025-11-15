@@ -36,6 +36,6 @@ export function getCommonPinningStyles<TData>({
     opacity: isPinned ? 0.95 : 1,
     position: isPinned ? "sticky" : "relative",
     width: typeof column.getSize === 'function' ? column.getSize() : undefined,
-    zIndex: isPinned ? 1 : 0,
+    zIndex: isPinned ? 10 : 0,
   };
 }

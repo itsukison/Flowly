@@ -9,6 +9,7 @@ import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
 import { DataGridRowHeightMenu } from "@/components/data-grid/data-grid-row-height-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -79,6 +80,9 @@ export default function DiceTableView({
 
   const [data, setData] = useState(normalizedRecords);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Set table context for sidebar
@@ -107,85 +111,113 @@ export default function DiceTableView({
   // Handle data changes with auto-save
   const handleDataChange = useCallback(
     async (newData: NormalizedTableRecord[]) => {
-      console.log("Data changed:", newData);
-      setData(newData);
-    },
-    []
-  );
+      // FIX: The built-in onDataUpdate puts JSONB fields at the wrong level
+      // It does: updatedRow[columnId] = value
+      // But for JSONB fields, we need: updatedRow.data[columnId] = value
+      // So we need to move misplaced fields into the data object
+      const fixedData = newData.map((record) => {
+        const fixed = { ...record, data: { ...record.data } };
 
-  // Handle individual cell updates from the data grid
-  const handleCellUpdate = useCallback(
-    async (
-      props:
-        | { rowIndex: number; columnId: string; value: any }
-        | Array<{ rowIndex: number; columnId: string; value: any }>
-    ) => {
-      // Handle both single and batch updates
-      const updates = Array.isArray(props) ? props : [props];
-
-      for (const { rowIndex, columnId, value } of updates) {
-        const record = data[rowIndex];
-        if (!record) continue;
-
-        setIsSaving(true);
-
-        try {
-          // Determine if this is a direct property or JSONB field
+        // Check each column to see if it's a JSONB field that was misplaced
+        columns.forEach((column) => {
           const isDirectProperty = [
             "name",
             "email",
             "company",
             "status",
-          ].includes(columnId);
+          ].includes(column.name);
 
-          let updatePayload: any;
-          if (isDirectProperty) {
-            // Direct property update
-            updatePayload = { [columnId]: value };
-          } else {
-            // JSONB field update - merge with existing data
-            updatePayload = {
-              data: {
-                ...record.data,
-                [columnId]: value,
-              },
-            };
+          if (!isDirectProperty && column.name in record) {
+            // This is a JSONB field that was placed at root level - move it
+            // (Always move it, even if it already exists in data, because the new value is at root)
+            fixed.data[column.name] = (record as any)[column.name];
+            delete (fixed as any)[column.name];
           }
+        });
 
-          console.log("Updating record:", record.id, updatePayload);
+        return fixed;
+      });
 
-          const response = await fetch(`/api/records/${record.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatePayload),
-          });
+      // Find what changed by comparing with current data
+      const updates: Array<{ record: NormalizedTableRecord; changes: any }> =
+        [];
 
-          if (!response.ok) {
-            throw new Error("Failed to save changes");
+      fixedData.forEach((newRecord, index) => {
+        const oldRecord = data[index];
+        if (!oldRecord || oldRecord.id !== newRecord.id) {
+          return;
+        }
+
+        // Check for changes in direct fields
+        const directFields = ["name", "email", "company", "status"];
+        const directChanges: any = {};
+        let hasDirectChanges = false;
+
+        directFields.forEach((field) => {
+          if (oldRecord[field] !== newRecord[field]) {
+            directChanges[field] = newRecord[field];
+            hasDirectChanges = true;
           }
+        });
 
-          // Update local state
-          setData((prevData) => {
-            const newData = [...prevData];
-            if (isDirectProperty) {
-              newData[rowIndex] = { ...newData[rowIndex], [columnId]: value };
-            } else {
-              newData[rowIndex] = {
-                ...newData[rowIndex],
-                data: { ...newData[rowIndex].data, [columnId]: value },
-              };
-            }
-            return newData;
-          });
+        // Check for changes in JSONB data
+        const dataChanges: any = {};
+        let hasDataChanges = false;
+
+        const oldData = oldRecord.data || {};
+        const newDataObj = newRecord.data || {};
+
+        Object.keys(newDataObj).forEach((key) => {
+          if (oldData[key] !== newDataObj[key]) {
+            dataChanges[key] = newDataObj[key];
+            hasDataChanges = true;
+          }
+        });
+
+        if (hasDirectChanges || hasDataChanges) {
+          const payload: any = { ...directChanges };
+          if (hasDataChanges) {
+            payload.data = { ...oldData, ...dataChanges };
+          }
+          updates.push({ record: newRecord, changes: payload });
+        }
+      });
+
+      // Update local state immediately for responsive UI with fixed data
+      setData(fixedData);
+
+      // Save changes to API
+      if (updates.length > 0) {
+        setIsSaving(true);
+        setSaveStatus("saving");
+
+        try {
+          await Promise.all(
+            updates.map(({ record, changes }) =>
+              fetch(`/api/records/${record.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(changes),
+              }).then((res) => {
+                if (!res.ok) throw new Error("Failed to save");
+                return res.json();
+              })
+            )
+          );
+
+          setSaveStatus("saved");
+          setTimeout(() => setSaveStatus("idle"), 2000);
         } catch (error) {
           console.error("Error saving changes:", error);
+          setSaveStatus("error");
+          setTimeout(() => setSaveStatus("idle"), 3000);
           alert("変更の保存に失敗しました");
         } finally {
           setIsSaving(false);
         }
       }
     },
-    [data]
+    [data, columns]
   );
 
   // Handle adding new rows
@@ -252,6 +284,38 @@ export default function DiceTableView({
   // Transform columns to Dice UI format
   const diceColumns = useMemo<ColumnDef<NormalizedTableRecord>[]>(() => {
     const cols: ColumnDef<NormalizedTableRecord>[] = [];
+
+    // Add checkbox selection column (pinned to left)
+    cols.push({
+      id: "select",
+      header: ({ table }) => (
+        <div className="pl-3">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="pl-3">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        </div>
+      ),
+      size: 52,
+      enableSorting: false,
+      enableHiding: false,
+      enableResizing: false,
+    });
 
     // Process all columns from database
     columns.forEach((column) => {
@@ -321,6 +385,7 @@ export default function DiceTableView({
                 row.data?.[column.name] ?? "",
             }),
         header: column.label,
+        enableSorting: true,
         meta: {
           label: column.label,
           cell: {
@@ -336,6 +401,7 @@ export default function DiceTableView({
       id: "status",
       accessorKey: "status",
       header: "ステータス",
+      enableSorting: true,
       meta: {
         label: "ステータス",
         cell: {
@@ -361,8 +427,16 @@ export default function DiceTableView({
     enableSearch: true,
     autoFocus: true,
     getRowId: (row) => row.id,
-    meta: {
-      onDataUpdate: handleCellUpdate,
+    enableRowSelection: true,
+    initialState: {
+      columnPinning: {
+        left: ["select"],
+      },
+    },
+    state: {
+      columnPinning: {
+        left: ["select"],
+      },
     },
   });
 
@@ -438,6 +512,42 @@ export default function DiceTableView({
                   ></path>
                 </svg>
                 保存中...
+              </div>
+            )}
+            {!isSaving && saveStatus === "saved" && (
+              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                <svg
+                  className="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                保存完了
+              </div>
+            )}
+            {!isSaving && saveStatus === "error" && (
+              <div className="flex items-center gap-1.5 text-xs text-red-600">
+                <svg
+                  className="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                保存失敗
               </div>
             )}
           </div>

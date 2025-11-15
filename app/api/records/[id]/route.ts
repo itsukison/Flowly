@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { transformToRecord, validateAgainstSchema } from '@/lib/records/transform'
 
 // GET /api/records/[id] - Get a single record
 export async function GET(
@@ -51,53 +50,64 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
-    // Get existing record to find table_id
-    const { data: existingRecord } = await supabase
+    console.log('PATCH /api/records/[id] - Received update:', { id, body })
+
+    // Get existing record to merge with updates
+    const { data: existingRecord, error: fetchError } = await supabase
       .from('records')
-      .select('table_id')
+      .select('*')
       .eq('id', id)
       .single()
 
-    if (!existingRecord) {
+    if (fetchError || !existingRecord) {
+      console.error('Record not found:', fetchError)
       return NextResponse.json({ error: 'Record not found' }, { status: 404 })
     }
 
-    // Get table schema for validation
-    const { data: table } = await supabase
-      .from('tables')
-      .select('schema')
-      .eq('id', existingRecord.table_id)
-      .single()
+    // Prepare update payload - only update fields that are provided
+    const updatePayload: any = {}
 
-    // Validate against schema
-    if (table?.schema) {
-      const validation = validateAgainstSchema(body, table.schema)
-      if (!validation.valid) {
-        return NextResponse.json(
-          { error: 'Validation failed', details: validation.errors },
-          { status: 400 }
-        )
+    // Handle direct fields (name, email, company, status)
+    const directFields = ['name', 'email', 'company', 'status']
+    directFields.forEach(field => {
+      if (field in body) {
+        updatePayload[field] = body[field]
+      }
+    })
+
+    // Handle JSONB data field - merge with existing data
+    if ('data' in body && body.data !== null && typeof body.data === 'object') {
+      const existingData = (existingRecord.data as Record<string, any>) || {}
+      updatePayload.data = {
+        ...existingData,
+        ...body.data,
       }
     }
 
-    // Transform data to record structure
-    const recordData = transformToRecord(body, table?.schema)
+    // Add updated_at timestamp
+    updatePayload.updated_at = new Date().toISOString()
+
+    console.log('Update payload:', updatePayload)
 
     // Update record
     const { data, error } = await supabase
       .from('records')
-      .update(recordData)
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase update error:', error)
+      throw error
+    }
 
+    console.log('Update successful:', data)
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error updating record:', error)
     return NextResponse.json(
-      { error: 'Failed to update record' },
+      { error: 'Failed to update record', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

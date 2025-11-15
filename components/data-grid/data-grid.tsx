@@ -118,7 +118,7 @@ export function DataGrid<TData>({
                     }
                     data-slot="grid-header-cell"
                     tabIndex={-1}
-                    className={cn("relative", {
+                    className={cn("relative bg-background", {
                       "border-r": header.column.id !== "select",
                     })}
                     style={{

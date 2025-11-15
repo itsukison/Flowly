@@ -1,5 +1,4 @@
 "use client";
-
 import type { ColumnSort, SortDirection, Table } from "@tanstack/react-table";
 import {
   ArrowDownUp,
@@ -44,8 +43,8 @@ const SORT_SHORTCUT_KEY = "s";
 const REMOVE_SORT_SHORTCUTS = ["backspace", "delete"];
 
 const SORT_ORDERS = [
-  { label: "Asc", value: "asc" },
-  { label: "Desc", value: "desc" },
+  { label: "昇順", value: "asc" },
+  { label: "降順", value: "desc" },
 ];
 
 interface DataGridSortMenuProps<TData>
@@ -103,25 +102,25 @@ export function DataGridSortMenu<TData>({
       onSortingChange((prevSorting) => {
         if (!prevSorting) return prevSorting;
         return prevSorting.map((sort) =>
-          sort.id === sortId ? { ...sort, ...updates } : sort,
+          sort.id === sortId ? { ...sort, ...updates } : sort
         );
       });
     },
-    [onSortingChange],
+    [onSortingChange]
   );
 
   const onSortRemove = React.useCallback(
     (sortId: string) => {
       onSortingChange((prevSorting) =>
-        prevSorting.filter((item) => item.id !== sortId),
+        prevSorting.filter((item) => item.id !== sortId)
       );
     },
-    [onSortingChange],
+    [onSortingChange]
   );
 
   const onSortingReset = React.useCallback(
     () => onSortingChange(table.initialState.sorting),
-    [onSortingChange, table.initialState.sorting],
+    [onSortingChange, table.initialState.sorting]
   );
 
   React.useEffect(() => {
@@ -159,7 +158,7 @@ export function DataGridSortMenu<TData>({
         onSortingReset();
       }
     },
-    [sorting.length, onSortingReset],
+    [sorting.length, onSortingReset]
   );
 
   return (
@@ -177,7 +176,7 @@ export function DataGridSortMenu<TData>({
             onKeyDown={onTriggerKeyDown}
           >
             <ArrowDownUp className="text-muted-foreground" />
-            Sort
+            並び替え
             {sorting.length > 0 && (
               <Badge
                 variant="secondary"
@@ -192,22 +191,24 @@ export function DataGridSortMenu<TData>({
           aria-labelledby={labelId}
           aria-describedby={descriptionId}
           className="flex w-full max-w-(--radix-popover-content-available-width) flex-col gap-3.5 p-4 sm:min-w-[380px]"
+          align="end"
+          sideOffset={8}
           {...props}
         >
-          <div className="flex flex-col gap-1">
-            <h4 id={labelId} className="font-medium leading-none">
-              {sorting.length > 0 ? "Sort by" : "No sorting applied"}
+          <div className="flex flex-col gap-1.5 pl-1">
+            <h4 id={labelId} className="font-semibold leading-none text-sm">
+              {sorting.length > 0 ? "並び替え" : "並び替えなし"}
             </h4>
             <p
               id={descriptionId}
               className={cn(
-                "text-muted-foreground text-sm",
-                sorting.length > 0 && "sr-only",
+                "text-muted-foreground text-xs",
+                sorting.length > 0 && "sr-only"
               )}
             >
               {sorting.length > 0
-                ? "Modify sorting to organize your rows."
-                : "Add sorting to organize your rows."}
+                ? "行を整理するために並び替えを変更します。"
+                : "行を整理するために並び替えを追加します。"}
             </p>
           </div>
           {sorting.length > 0 && (
@@ -230,21 +231,21 @@ export function DataGridSortMenu<TData>({
           <div className="flex w-full items-center gap-2">
             <Button
               size="sm"
-              className="rounded"
+              className="rounded-lg h-8"
               ref={addButtonRef}
               onClick={onSortAdd}
               disabled={columns.length === 0}
             >
-              Add sort
+              並び替えを追加
             </Button>
             {sorting.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded"
+                className="rounded-lg h-8"
                 onClick={onSortingReset}
               >
-                Reset sorting
+                リセット
               </Button>
             )}
           </div>
@@ -305,7 +306,7 @@ function DataTableSortItem({
         onSortRemove(sort.id);
       }
     },
-    [sort.id, showFieldSelector, showDirectionSelector, onSortRemove],
+    [sort.id, showFieldSelector, showDirectionSelector, onSortRemove]
   );
 
   return (
@@ -323,7 +324,7 @@ function DataTableSortItem({
               aria-controls={fieldListboxId}
               variant="outline"
               size="sm"
-              className="w-44 justify-between rounded font-normal"
+              className="w-44 justify-between rounded-lg font-normal h-8"
             >
               <span className="truncate">{columnLabels.get(sort.id)}</span>
               <ChevronsUpDown className="opacity-50" />
@@ -334,9 +335,9 @@ function DataTableSortItem({
             className="w-(--radix-popover-trigger-width) p-0"
           >
             <Command>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="フィールドを検索..." />
               <CommandList>
-                <CommandEmpty>No fields found.</CommandEmpty>
+                <CommandEmpty>フィールドが見つかりません。</CommandEmpty>
                 <CommandGroup>
                   {columns.map((column) => (
                     <CommandItem
@@ -362,7 +363,7 @@ function DataTableSortItem({
         >
           <SelectTrigger
             aria-controls={directionListboxId}
-            className="h-8 w-24 rounded data-size:h-8"
+            className="h-8 w-24 rounded-lg data-size:h-8"
           >
             <SelectValue />
           </SelectTrigger>
@@ -381,7 +382,7 @@ function DataTableSortItem({
           aria-controls={sortItemId}
           variant="outline"
           size="icon"
-          className="size-8 shrink-0 rounded"
+          className="size-8 shrink-0 rounded-lg"
           onClick={() => onSortRemove(sort.id)}
         >
           <Trash2 />
@@ -390,7 +391,7 @@ function DataTableSortItem({
           <Button
             variant="outline"
             size="icon"
-            className="size-8 shrink-0 rounded"
+            className="size-8 shrink-0 rounded-lg"
           >
             <GripVertical />
           </Button>
