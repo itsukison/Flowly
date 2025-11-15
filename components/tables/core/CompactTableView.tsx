@@ -1,42 +1,43 @@
-'use client'
+"use client";
 
-import { MoreVertical, Edit, Trash2 } from 'lucide-react'
-import { useState } from 'react'
-import DynamicFieldRenderer from './DynamicFieldRenderer'
-import EditRecordModal from '../modals/EditRecordModal'
-import DeleteRecordModal from '../modals/DeleteRecordModal'
+import { MoreVertical, Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import DynamicFieldRenderer from "./DynamicFieldRenderer";
+import EditRecordModal from "../modals/EditRecordModal";
+import DeleteRecordModal from "../modals/DeleteRecordModal";
+import type { Json } from "@/lib/supabase/database.types";
 
 interface Column {
-  id: string
-  name: string
-  label: string
-  type: string
-  options: any
-  is_required: boolean | null
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  options: any;
+  is_required: boolean | null;
 }
 
 interface Status {
-  id: string
-  name: string
-  color: string | null
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 interface TableRecord {
-  id: string
-  name?: string
-  email?: string
-  company?: string
-  status?: string
-  data: Record<string, any>
-  [key: string]: any
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  company?: string | null;
+  status?: string | null;
+  data: Json | null;
+  [key: string]: any;
 }
 
 interface CompactTableViewProps {
-  columns: Column[]
-  statuses: Status[]
-  records: TableRecord[]
-  tableId: string
-  maxRows?: number
+  columns: Column[];
+  statuses: Status[];
+  records: TableRecord[];
+  tableId: string;
+  maxRows?: number;
 }
 
 export default function CompactTableView({
@@ -46,11 +47,13 @@ export default function CompactTableView({
   tableId,
   maxRows = 10,
 }: CompactTableViewProps) {
-  const [editingRecord, setEditingRecord] = useState<TableRecord | null>(null)
-  const [deletingRecord, setDeletingRecord] = useState<TableRecord | null>(null)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [editingRecord, setEditingRecord] = useState<TableRecord | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<TableRecord | null>(
+    null
+  );
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const displayRecords = records.slice(0, maxRows)
+  const displayRecords = records.slice(0, maxRows);
 
   if (records.length === 0) {
     return (
@@ -75,7 +78,7 @@ export default function CompactTableView({
         </h3>
         <p className="text-[#71717B]">最初のレコードを追加してください</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -105,11 +108,14 @@ export default function CompactTableView({
               {displayRecords.map((record) => {
                 // Helper to get field value
                 const getFieldValue = (fieldName: string) => {
-                  if (fieldName === 'name') return record.name
-                  if (fieldName === 'email') return record.email
-                  if (fieldName === 'company' || fieldName === 'company_name') return record.company
-                  return record.data?.[fieldName]
-                }
+                  if (fieldName === "name") return record.name;
+                  if (fieldName === "email") return record.email;
+                  if (fieldName === "company" || fieldName === "company_name")
+                    return record.company;
+                  return (record.data as Record<string, any> | null)?.[
+                    fieldName
+                  ];
+                };
 
                 return (
                   <tr
@@ -117,7 +123,10 @@ export default function CompactTableView({
                     className="hover:bg-[#FAFAFA] transition-colors"
                   >
                     {columns.slice(0, 5).map((column) => (
-                      <td key={column.id} className="px-6 py-4 whitespace-nowrap">
+                      <td
+                        key={column.id}
+                        className="px-6 py-4 whitespace-nowrap"
+                      >
                         <DynamicFieldRenderer
                           column={column}
                           value={getFieldValue(column.name)}
@@ -132,11 +141,11 @@ export default function CompactTableView({
                           style={{
                             backgroundColor: `${
                               statuses.find((s) => s.name === record.status)
-                                ?.color || '#71717B'
+                                ?.color || "#71717B"
                             }20`,
                             color:
                               statuses.find((s) => s.name === record.status)
-                                ?.color || '#71717B',
+                                ?.color || "#71717B",
                           }}
                         >
                           {record.status}
@@ -164,8 +173,8 @@ export default function CompactTableView({
                           <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E4E4E7] rounded-lg shadow-lg z-20">
                             <button
                               onClick={() => {
-                                setOpenMenuId(null)
-                                setEditingRecord(record)
+                                setOpenMenuId(null);
+                                setEditingRecord(record);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[#F4F4F5] transition-colors"
                             >
@@ -174,8 +183,8 @@ export default function CompactTableView({
                             </button>
                             <button
                               onClick={() => {
-                                setOpenMenuId(null)
-                                setDeletingRecord(record)
+                                setOpenMenuId(null);
+                                setDeletingRecord(record);
                               }}
                               className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                             >
@@ -187,7 +196,7 @@ export default function CompactTableView({
                       )}
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -211,5 +220,5 @@ export default function CompactTableView({
         />
       )}
     </>
-  )
+  );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { DataGrid } from "@/components/data-grid/data-grid";
@@ -11,6 +10,7 @@ import { DataGridRowHeightMenu } from "@/components/data-grid/data-grid-row-heig
 import { useDataGrid } from "@/hooks/use-data-grid";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
 import type { ColumnDef } from "@tanstack/react-table";
+import type { Json } from "@/lib/supabase/database.types";
 
 interface Column {
   id: string;
@@ -33,43 +33,47 @@ interface TableRecord {
   id: string;
   table_id?: string;
   organization_id?: string;
-  name?: string;
-  email?: string;
-  company?: string;
-  status?: string;
-  data: Record<string, any>;
-  created_at?: string;
-  updated_at?: string;
+  name?: string | null;
+  email?: string | null;
+  company?: string | null;
+  status?: string | null;
+  data: Json | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   [key: string]: any;
 }
+
+type NormalizedTableRecord = Omit<TableRecord, "data"> & {
+  data: Record<string, any>;
+};
 
 interface Table {
   id: string;
   name: string;
-  description?: string;
-  icon?: string;
+  description?: string | null;
+  icon?: string | null;
 }
 
-interface DiceTableTestViewProps {
+interface DiceTableViewProps {
   table: Table;
   columns: Column[];
   statuses: Status[];
   records: TableRecord[];
 }
 
-export default function DiceTableTestView({
+export default function DiceTableView({
   table,
   columns,
   statuses,
   records,
-}: DiceTableTestViewProps) {
+}: DiceTableViewProps) {
   const router = useRouter();
 
   // Normalize records to ensure data field exists
-  const normalizedRecords = useMemo(() => {
+  const normalizedRecords = useMemo<NormalizedTableRecord[]>(() => {
     return records.map((record) => ({
       ...record,
-      data: record.data || {},
+      data: (record.data as Record<string, any>) || {},
     }));
   }, [records]);
 
@@ -101,10 +105,13 @@ export default function DiceTableTestView({
   }, [isSidebarOpen]);
 
   // Handle data changes with auto-save
-  const handleDataChange = useCallback(async (newData: TableRecord[]) => {
-    console.log("Data changed:", newData);
-    setData(newData);
-  }, []);
+  const handleDataChange = useCallback(
+    async (newData: NormalizedTableRecord[]) => {
+      console.log("Data changed:", newData);
+      setData(newData);
+    },
+    []
+  );
 
   // Handle individual cell updates from the data grid
   const handleCellUpdate = useCallback(
@@ -221,7 +228,7 @@ export default function DiceTableTestView({
 
   // Handle deleting rows
   const handleRowsDelete = useCallback(
-    async (rows: TableRecord[]) => {
+    async (rows: NormalizedTableRecord[]) => {
       try {
         for (const record of rows) {
           const response = await fetch(`/api/records/${record.id}`, {
@@ -243,8 +250,8 @@ export default function DiceTableTestView({
   );
 
   // Transform columns to Dice UI format
-  const diceColumns = useMemo<ColumnDef<TableRecord>[]>(() => {
-    const cols: ColumnDef<TableRecord>[] = [];
+  const diceColumns = useMemo<ColumnDef<NormalizedTableRecord>[]>(() => {
+    const cols: ColumnDef<NormalizedTableRecord>[] = [];
 
     // Process all columns from database
     columns.forEach((column) => {
@@ -310,7 +317,8 @@ export default function DiceTableTestView({
         ...(isDirectProperty
           ? { accessorKey: column.name }
           : {
-              accessorFn: (row: TableRecord) => row.data?.[column.name] ?? "",
+              accessorFn: (row: NormalizedTableRecord) =>
+                row.data?.[column.name] ?? "",
             }),
         header: column.label,
         meta: {
@@ -405,7 +413,7 @@ export default function DiceTableTestView({
             </button>
             <div className="h-4 w-px bg-[#E4E4E7]" /> {/* Separator */}
             <h1 className="text-sm font-semibold text-[#09090B]">
-              {table.name} - Dice UI
+              {table.name}
             </h1>
             {isSaving && (
               <div className="flex items-center gap-2 text-xs text-[#71717B]">
@@ -436,12 +444,6 @@ export default function DiceTableTestView({
           <div className="flex items-center gap-2">
             <DataGridSortMenu table={dataGridTable} />
             <DataGridRowHeightMenu table={dataGridTable} />
-            <Link
-              href={`/dashboard/tables/${table.id}/data`}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-[#09090B] hover:bg-[#27272A] rounded-md transition-colors"
-            >
-              Handsontable版
-            </Link>
           </div>
         </div>
 

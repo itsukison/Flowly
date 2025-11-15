@@ -1,69 +1,89 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Plus, Maximize2, Target, TrendingUp, CheckCircle2, Users, Database } from 'lucide-react'
-import CompactTableView from '../core/CompactTableView'
-import AddRecordModalWithImport from '../modals/AddRecordModalWithImport'
-import Link from 'next/link'
+import { useState } from "react";
+import {
+  Plus,
+  Maximize2,
+  Target,
+  TrendingUp,
+  CheckCircle2,
+  Users,
+  Database,
+} from "lucide-react";
+import CompactTableView from "../core/CompactTableView";
+import AddRecordModalWithImport from "../modals/AddRecordModalWithImport";
+import Link from "next/link";
+import type { Json } from "@/lib/supabase/database.types";
 
 interface Column {
-  id: string
-  name: string
-  label: string
-  type: string
-  options: any
-  is_required: boolean | null
-  display_order: number
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  options: any;
+  is_required: boolean | null;
+  display_order: number;
 }
 
 interface Status {
-  id: string
-  name: string
-  color: string | null
-  display_order: number
+  id: string;
+  name: string;
+  color: string | null;
+  display_order: number;
 }
 
 interface TableRecord {
-  id: string
-  name?: string
-  email?: string
-  company?: string
-  status?: string
-  data: Record<string, any>
-  [key: string]: any
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  company?: string | null;
+  status?: string | null;
+  data: Json | null;
+  [key: string]: any;
 }
 
 interface TableMainViewProps {
-  table: any
-  columns: Column[]
-  statuses: Status[]
-  records: TableRecord[]
+  table: any;
+  columns: Column[];
+  statuses: Status[];
+  records: TableRecord[];
 }
 
-export default function TableMainView({ table, columns, statuses, records }: TableMainViewProps) {
-  const [showAddRecord, setShowAddRecord] = useState(false)
+export default function TableMainView({
+  table,
+  columns,
+  statuses,
+  records,
+}: TableMainViewProps) {
+  const [showAddRecord, setShowAddRecord] = useState(false);
 
-  const totalRecords = records.length
+  const totalRecords = records.length;
   const statusStats = statuses.slice(0, 3).map((status) => ({
     name: status.name,
     count: records.filter((r) => r.status === status.name).length,
-  }))
+  }));
 
   const getStatusIcon = (statusName: string) => {
-    const lowerName = statusName.toLowerCase()
-    if (lowerName.includes('リード') || lowerName.includes('lead')) return Target
-    if (lowerName.includes('商談') || lowerName.includes('交渉') || lowerName.includes('negotiation'))
-      return TrendingUp
+    const lowerName = statusName.toLowerCase();
+    if (lowerName.includes("リード") || lowerName.includes("lead"))
+      return Target;
     if (
-      lowerName.includes('契約') ||
-      lowerName.includes('成約') ||
-      lowerName.includes('contract') ||
-      lowerName.includes('closed')
+      lowerName.includes("商談") ||
+      lowerName.includes("交渉") ||
+      lowerName.includes("negotiation")
     )
-      return CheckCircle2
-    if (lowerName.includes('顧客') || lowerName.includes('customer')) return Users
-    return Target
-  }
+      return TrendingUp;
+    if (
+      lowerName.includes("契約") ||
+      lowerName.includes("成約") ||
+      lowerName.includes("contract") ||
+      lowerName.includes("closed")
+    )
+      return CheckCircle2;
+    if (lowerName.includes("顧客") || lowerName.includes("customer"))
+      return Users;
+    return Target;
+  };
 
   return (
     <>
@@ -81,14 +101,16 @@ export default function TableMainView({ table, columns, statuses, records }: Tab
         </div>
 
         {statusStats.map((stat, index) => {
-          const StatusIcon = getStatusIcon(stat.name)
+          const StatusIcon = getStatusIcon(stat.name);
           return (
             <div
               key={index}
               className="bg-white border border-[#E4E4E7] rounded-2xl p-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-[#71717B]">{stat.name}</h3>
+                <h3 className="text-sm font-medium text-[#71717B]">
+                  {stat.name}
+                </h3>
                 <div className="w-10 h-10 rounded-xl bg-[#F4F4F5] flex items-center justify-center">
                   <StatusIcon className="w-5 h-5 text-[#09090B]" />
                 </div>
@@ -96,7 +118,7 @@ export default function TableMainView({ table, columns, statuses, records }: Tab
               <p className="text-2xl font-bold text-[#09090B]">{stat.count}</p>
               <p className="text-xs text-[#71717B]">レコード</p>
             </div>
-          )
+          );
         })}
 
         {statusStats.length < 3 &&
@@ -147,7 +169,10 @@ export default function TableMainView({ table, columns, statuses, records }: Tab
       {/* Add Record Modal */}
       {showAddRecord && (
         <>
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={() => setShowAddRecord(false)} />
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            onClick={() => setShowAddRecord(false)}
+          />
           <AddRecordModalWithImport
             tableId={table.id}
             columns={columns}
@@ -158,5 +183,5 @@ export default function TableMainView({ table, columns, statuses, records }: Tab
         </>
       )}
     </>
-  )
+  );
 }

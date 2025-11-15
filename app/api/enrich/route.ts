@@ -18,20 +18,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark records for enrichment by adding enrichment_status to data JSONB
-    const { error } = await supabase
+    // Fetch current records to update their data field
+    const { data: records, error: fetchError } = await supabase
       .from('records')
-      .update({ 
-        data: supabase.rpc('jsonb_set', {
-          target: 'data',
-          path: '{enrichment_status}',
-          new_value: '"pending"'
-        })
-      })
+      .select('id, data')
       .in('id', ids)
 
-    if (error) {
-      // Fallback: just log for now since enrichment is not critical
-      console.warn('Could not mark records for enrichment:', error)
+    if (fetchError) {
+      console.warn('Could not fetch records for enrichment:', fetchError)
+    } else if (records) {
+      // Update each record with enrichment_status in data JSONB
+      for (const record of records) {
+        const updatedData = {
+          ...(record.data as Record<string, any> || {}),
+          enrichment_status: 'pending'
+        }
+        
+        await supabase
+          .from('records')
+          .update({ data: updatedData })
+          .eq('id', record.id)
+      }
     }
 
     // In a real implementation, this would queue enrichment jobs
