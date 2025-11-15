@@ -63,18 +63,35 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ```
 app/
 ├── app/
-│   ├── page.tsx          # Main landing page
-│   ├── layout.tsx        # Root layout with fonts and metadata
-│   └── globals.css       # Global styles and animations
+│   ├── page.tsx                    # Main landing page
+│   ├── layout.tsx                  # Root layout with fonts and metadata
+│   ├── globals.css                 # Global styles and animations
+│   └── dashboard/
+│       └── tables/[tableId]/
+│           ├── page.tsx            # Main table view (stats + compact table)
+│           ├── data/page.tsx       # Full data view
+│           ├── columns/page.tsx    # Column management
+│           ├── settings/page.tsx   # Table settings
+│           └── layout.tsx          # Shared table layout
 ├── components/
-│   ├── Header.tsx        # Header with language toggle
-│   ├── Slideshow.tsx     # Image slideshow component
-│   ├── Ticker.tsx        # Text ticker component
-│   └── Noise.tsx         # Canvas noise effect
+│   ├── Header.tsx                  # Header with language toggle
+│   ├── Slideshow.tsx               # Image slideshow component
+│   ├── Ticker.tsx                  # Text ticker component
+│   ├── Noise.tsx                   # Canvas noise effect
+│   ├── tables/                     # Table components (organized by domain)
+│   │   ├── core/                   # Foundational table components (4 files)
+│   │   ├── modals/                 # Modal dialogs (9 files)
+│   │   ├── managers/               # Management interfaces (4 files)
+│   │   ├── views/                  # Page-level views (3 files)
+│   │   └── deprecated/             # Old files to be removed (3 files)
+│   └── import/                     # Import components (organized by feature)
+│       ├── core/                   # Main import component (1 file)
+│       ├── wizard/                 # Wizard orchestration (2 files)
+│       └── steps/                  # Individual wizard steps (8 files)
 ├── contexts/
-│   └── LanguageContext.tsx  # Language state management
+│   └── LanguageContext.tsx         # Language state management
 ├── lib/
-│   └── translations.ts   # Translation dictionary (EN/JP)
+│   └── translations.ts             # Translation dictionary (EN/JP)
 └── public/
     ├── slideshow-img*.png
     ├── avatar*.png

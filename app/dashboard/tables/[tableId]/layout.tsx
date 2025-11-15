@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import TableLayoutClient from '@/components/tables/TableLayoutClient'
+import TableLayoutClient from '@/components/tables/deprecated/TableLayoutClient'
 
 export default async function TableLayout({
   children,

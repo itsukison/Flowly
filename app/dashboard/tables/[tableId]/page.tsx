@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import TableMainView from '@/components/tables/TableMainView'
+import TableMainView from '@/components/tables/views/TableMainView'
 
 export default async function TablePage({ params }: { params: Promise<{ tableId: string }> }) {
   const supabase = await createClient()
@@ -36,8 +36,8 @@ export default async function TablePage({ params }: { params: Promise<{ tableId:
     .eq('table_id', tableId)
     .order('display_order', { ascending: true })
 
-  const { data: customers } = await supabase
-    .from('customers')
+  const { data: records } = await supabase
+    .from('records')
     .select('*')
     .eq('table_id', tableId)
     .order('created_at', { ascending: false })
@@ -47,7 +47,7 @@ export default async function TablePage({ params }: { params: Promise<{ tableId:
       table={table}
       columns={columns || []}
       statuses={statuses || []}
-      customers={customers || []}
+      records={records || []}
     />
   )
 }

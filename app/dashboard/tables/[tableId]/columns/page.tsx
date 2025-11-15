@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import ColumnManagerWrapper from '@/components/tables/ColumnManagerWrapper'
+import ColumnManagerWrapper from '@/components/tables/managers/ColumnManagerWrapper'
 
 export default async function ColumnsPage({
   params,

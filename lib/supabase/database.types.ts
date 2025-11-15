@@ -165,6 +165,13 @@ export type Database = {
             foreignKeyName: "customers_table_id_fkey"
             columns: ["table_id"]
             isOneToOne: false
+            referencedRelation: "table_statistics"
+            referencedColumns: ["table_id"]
+          },
+          {
+            foreignKeyName: "customers_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
             referencedRelation: "tables"
             referencedColumns: ["id"]
           },
@@ -255,6 +262,80 @@ export type Database = {
         }
         Relationships: []
       }
+      records: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          created_by: string | null
+          data: Json | null
+          email: string | null
+          id: string
+          name: string | null
+          organization_id: string
+          search_vector: unknown
+          status: string | null
+          table_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          organization_id: string
+          search_vector?: unknown
+          status?: string | null
+          table_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          organization_id?: string
+          search_vector?: unknown
+          status?: string | null
+          table_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "records_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "table_statistics"
+            referencedColumns: ["table_id"]
+          },
+          {
+            foreignKeyName: "records_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       table_columns: {
         Row: {
           created_at: string
@@ -294,6 +375,13 @@ export type Database = {
             foreignKeyName: "table_columns_table_id_fkey"
             columns: ["table_id"]
             isOneToOne: false
+            referencedRelation: "table_statistics"
+            referencedColumns: ["table_id"]
+          },
+          {
+            foreignKeyName: "table_columns_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
             referencedRelation: "tables"
             referencedColumns: ["id"]
           },
@@ -329,6 +417,13 @@ export type Database = {
             foreignKeyName: "table_statuses_table_id_fkey"
             columns: ["table_id"]
             isOneToOne: false
+            referencedRelation: "table_statistics"
+            referencedColumns: ["table_id"]
+          },
+          {
+            foreignKeyName: "table_statuses_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
             referencedRelation: "tables"
             referencedColumns: ["id"]
           },
@@ -343,6 +438,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          schema: Json | null
           template_type: string | null
           updated_at: string
         }
@@ -354,6 +450,7 @@ export type Database = {
           id?: string
           name: string
           organization_id: string
+          schema?: Json | null
           template_type?: string | null
           updated_at?: string
         }
@@ -365,6 +462,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string
+          schema?: Json | null
           template_type?: string | null
           updated_at?: string
         }
@@ -464,7 +562,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      table_statistics: {
+        Row: {
+          first_record_added: string | null
+          last_record_added: string | null
+          organization_id: string | null
+          records_last_30_days: number | null
+          records_last_7_days: number | null
+          table_id: string | null
+          table_name: string | null
+          total_records: number | null
+          unique_contributors: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tables_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       find_similar_customers: {
@@ -478,9 +597,9 @@ export type Database = {
           similarity: number
         }[]
       }
-      get_user_organization_id: { Args: never; Returns: string }
+      get_user_organization_id: { Args: Record<string, never>; Returns: string }
       get_user_organizations: {
-        Args: never
+        Args: Record<string, never>
         Returns: {
           organization_id: string
           organization_name: string

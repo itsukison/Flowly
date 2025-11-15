@@ -1,66 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+/**
+ * @deprecated This endpoint is deprecated. Use /api/records/[id] instead.
+ * The customers table has been replaced with a generic records table.
+ * This endpoint will be removed in a future version.
+ */
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+import { NextResponse } from 'next/server'
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-
-    const { data, error } = await supabase
-      .from('customers')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error updating customer:', error)
-    return NextResponse.json(
-      { error: 'Failed to update customer' },
-      { status: 500 }
-    )
-  }
+export async function GET() {
+  return NextResponse.json(
+    { 
+      error: 'This endpoint is deprecated. Please use /api/records/[id] instead.',
+      migration_guide: 'The customers table has been replaced with the records table. Update your API calls to use /api/records/[id].'
+    },
+    { status: 410 } // 410 Gone
+  )
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+export async function PATCH() {
+  return NextResponse.json(
+    { 
+      error: 'This endpoint is deprecated. Please use /api/records/[id] instead.',
+      migration_guide: 'The customers table has been replaced with the records table. Update your API calls to use /api/records/[id].'
+    },
+    { status: 410 }
+  )
+}
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting customer:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete customer' },
-      { status: 500 }
-    )
-  }
+export async function DELETE() {
+  return NextResponse.json(
+    { 
+      error: 'This endpoint is deprecated. Please use /api/records/[id] instead.',
+      migration_guide: 'The customers table has been replaced with the records table. Update your API calls to use /api/records/[id].'
+    },
+    { status: 410 }
+  )
 }

@@ -14,7 +14,7 @@ import {
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useEffect, useState } from "react";
 
-const navigation = [
+const dashboardNavigation = [
   { name: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
 ];
 
@@ -32,48 +32,75 @@ export default function DashboardSidebar() {
     const tableMatch = pathname.match(/\/dashboard\/tables\/([^\/]+)/);
     if (tableMatch) {
       const tableId = tableMatch[1];
-      // Fetch table info from the page's data attribute or context
-      const tableNameEl = document.querySelector('[data-table-name]');
-      const tableIconEl = document.querySelector('[data-table-icon]');
       
-      if (tableNameEl && tableIconEl) {
-        setTableContext({
-          tableId,
-          tableName: tableNameEl.getAttribute('data-table-name') || '',
-          tableIcon: tableIconEl.getAttribute('data-table-icon') || '',
+      // Function to get table info from data attributes
+      const updateTableContext = () => {
+        const tableName = document.body.getAttribute('data-table-name');
+        const tableIcon = document.body.getAttribute('data-table-icon');
+        
+        if (tableName && tableIcon) {
+          setTableContext({
+            tableId,
+            tableName,
+            tableIcon,
+          });
+        }
+      };
+
+      // Try immediately
+      updateTableContext();
+
+      // Watch for attribute changes on body element
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (
+            mutation.type === 'attributes' &&
+            (mutation.attributeName === 'data-table-name' ||
+              mutation.attributeName === 'data-table-icon')
+          ) {
+            updateTableContext();
+          }
         });
-      }
+      });
+
+      observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['data-table-name', 'data-table-icon'],
+      });
+
+      return () => {
+        observer.disconnect();
+      };
     } else {
       setTableContext(null);
     }
   }, [pathname]);
 
-  const tableNavigation = tableContext
-    ? [
-        {
-          name: "概要",
-          href: `/dashboard/tables/${tableContext.tableId}`,
-          icon: LayoutGrid,
-        },
-        {
-          name: "データ",
-          href: `/dashboard/tables/${tableContext.tableId}/data`,
-          icon: Database,
-        },
-        {
-          name: "列の管理",
-          href: `/dashboard/tables/${tableContext.tableId}/columns`,
-          icon: Columns,
-        },
-        {
-          name: "設定",
-          href: `/dashboard/tables/${tableContext.tableId}/settings`,
-          icon: Settings,
-        },
-      ]
-    : [];
+  // Table navigation - always defined, but disabled when no table selected
+  const tableNavigation = [
+    {
+      name: "概要",
+      href: tableContext ? `/dashboard/tables/${tableContext.tableId}` : "#",
+      icon: LayoutGrid,
+    },
+    {
+      name: "データ",
+      href: tableContext ? `/dashboard/tables/${tableContext.tableId}/data` : "#",
+      icon: Database,
+    },
+    {
+      name: "列の管理",
+      href: tableContext ? `/dashboard/tables/${tableContext.tableId}/columns` : "#",
+      icon: Columns,
+    },
+    {
+      name: "設定",
+      href: tableContext ? `/dashboard/tables/${tableContext.tableId}/settings` : "#",
+      icon: Settings,
+    },
+  ];
 
-  const currentNavigation = tableContext ? tableNavigation : navigation;
+  const isTableNavigationDisabled = !tableContext;
 
   return (
     <>
@@ -108,24 +135,88 @@ export default function DashboardSidebar() {
             </button>
           </div>
 
+          {/* Dashboard Navigation */}
+          <nav className="px-4 pt-6 pb-4 space-y-2">
+            {dashboardNavigation.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`
+                    flex items-center rounded-xl text-base font-medium transition-all
+                    ${
+                      isActive
+                        ? "bg-[#09090B] text-white"
+                        : "text-[#71717B] hover:bg-[#F4F4F5] hover:text-[#09090B]"
+                    }
+                    ${
+                      isCollapsed ? "w-9 h-9 justify-center" : "gap-3 px-4 py-3"
+                    }
+                  `}
+                  title={isCollapsed ? item.name : undefined}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <span className="whitespace-nowrap overflow-hidden">
+                      {item.name}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Separator */}
+          <div className="border-t border-[#E4E4E7]" />
+
           {/* Table Context Header */}
-          {tableContext && !isCollapsed && (
-            <div className="px-4 pb-4 border-b border-[#E4E4E7]">
+          {!isCollapsed && (
+            <div className="px-4 pt-4 pb-2">
               <div className="text-xs font-semibold text-[#71717B] mb-2">
                 テーブル
               </div>
-              <div className="text-sm font-bold text-[#09090B] truncate">
-                {tableContext.tableName}
+              <div className={`text-sm font-bold truncate ${
+                tableContext ? "text-[#09090B]" : "text-[#A1A1AA]"
+              }`}>
+                {tableContext ? tableContext.tableName : "テーブルを選択"}
               </div>
             </div>
           )}
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {currentNavigation.map((item) => {
-              const isActive = pathname === item.href;
+          {/* Table Navigation */}
+          <nav className="flex-1 px-4 py-4 space-y-2">
+            {tableNavigation.map((item) => {
+              const isActive = pathname === item.href && !isTableNavigationDisabled;
               const Icon = item.icon;
 
+              if (isTableNavigationDisabled) {
+                // Disabled state - not clickable
+                return (
+                  <div
+                    key={item.name}
+                    className={`
+                      flex items-center rounded-xl text-base font-medium cursor-not-allowed
+                      text-[#A1A1AA]
+                      ${
+                        isCollapsed ? "w-9 h-9 justify-center" : "gap-3 px-4 py-3"
+                      }
+                    `}
+                    title={isCollapsed ? item.name : "テーブルを選択してください"}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0 opacity-40" />
+                    {!isCollapsed && (
+                      <span className="whitespace-nowrap overflow-hidden opacity-40">
+                        {item.name}
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+
+              // Active state - clickable
               return (
                 <Link
                   key={item.name}
@@ -158,8 +249,9 @@ export default function DashboardSidebar() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E4E4E7] z-50">
-        <div className="flex justify-around items-center h-16">
-          {currentNavigation.map((item) => {
+        <div className="grid grid-cols-5 items-center h-16">
+          {/* Dashboard Link */}
+          {dashboardNavigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
 
@@ -168,12 +260,50 @@ export default function DashboardSidebar() {
                 key={item.name}
                 href={item.href}
                 className={`
-                  flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all
+                  flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all
                   ${isActive ? "text-[#09090B]" : "text-[#71717B]"}
                 `}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{item.name}</span>
+                <span className="text-xs font-medium truncate max-w-full">
+                  {item.name}
+                </span>
+              </Link>
+            );
+          })}
+
+          {/* Table Navigation */}
+          {tableNavigation.map((item) => {
+            const isActive = pathname === item.href && !isTableNavigationDisabled;
+            const Icon = item.icon;
+
+            if (isTableNavigationDisabled) {
+              return (
+                <div
+                  key={item.name}
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2 text-[#A1A1AA] cursor-not-allowed"
+                >
+                  <Icon className="w-5 h-5 opacity-40" />
+                  <span className="text-xs font-medium opacity-40 truncate max-w-full">
+                    {item.name}
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`
+                  flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all
+                  ${isActive ? "text-[#09090B]" : "text-[#71717B]"}
+                `}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-xs font-medium truncate max-w-full">
+                  {item.name}
+                </span>
               </Link>
             );
           })}

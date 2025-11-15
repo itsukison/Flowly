@@ -1,0 +1,156 @@
+/**
+ * Custom Handsontable Theme for Flowly
+ * Uses CSS variables to customize the ht-theme-main theme
+ */
+
+.ht-theme-main,
+.ht-theme-main-dark-auto {
+  /* Typography */
+  --ht-font-size: 14px;
+  --ht-font-size-small: 12px;
+  --ht-line-height: 1.5;
+  --ht-font-weight: 400;
+  --ht-letter-spacing: 0;
+
+  /* Layout & Spacing */
+  --ht-gap-size: 8px;
+  --ht-icon-size: 16px;
+
+  /* Colors */
+  --ht-border-color: #E4E4E7;
+  --ht-accent-color: #09090B;
+  --ht-foreground-color: #09090B;
+  --ht-foreground-secondary-color: #71717B;
+  --ht-background-color: #FFFFFF;
+  --ht-placeholder-color: #A1A1AA;
+  --ht-read-only-color: #71717B;
+  --ht-disabled-color: #A1A1AA;
+
+  /* Cell Borders */
+  --ht-cell-horizontal-border-color: #E4E4E7;
+  --ht-cell-vertical-border-color: #E4E4E7;
+
+  /* Wrapper */
+  --ht-wrapper-border-width: 0;
+  --ht-wrapper-border-radius: 0;
+  --ht-wrapper-border-color: transparent;
+
+  /* Row Styling */
+  --ht-row-header-odd-background-color: #F4F4F5;
+  --ht-row-header-even-background-color: #F4F4F5;
+  --ht-row-cell-odd-background-color: #FFFFFF;
+  --ht-row-cell-even-background-color: #FFFFFF;
+
+  /* Cell Padding */
+  --ht-cell-horizontal-padding: 12px;
+  --ht-cell-vertical-padding: 6px;
+
+  /* Cell Editor */
+  --ht-cell-editor-border-width: 2px;
+  --ht-cell-editor-border-color: #09090B;
+  --ht-cell-editor-foreground-color: #09090B;
+  --ht-cell-editor-background-color: #FFFFFF;
+  --ht-cell-editor-shadow-blur-radius: 8px;
+  --ht-cell-editor-shadow-color: rgba(0, 0, 0, 0.1);
+
+  /* Cell States */
+  --ht-cell-success-background-color: #D1FAE5;
+  --ht-cell-error-background-color: #FEE2E2;
+  --ht-cell-read-only-background-color: #F4F4F5;
+
+  /* Cell Selection */
+  --ht-cell-selection-border-color: #09090B;
+  --ht-cell-selection-background-color: #F4F4F5;
+
+  /* Cell Autofill */
+  --ht-cell-autofill-size: 6px;
+  --ht-cell-autofill-border-width: 2px;
+  --ht-cell-autofill-border-radius: 2px;
+  --ht-cell-autofill-border-color: #09090B;
+  --ht-cell-autofill-background-color: #09090B;
+  --ht-cell-autofill-fill-border-color: #09090B;
+
+  /* Scrollbar */
+  --ht-scrollbar-border-radius: 6px;
+  --ht-scrollbar-track-color: #F4F4F5;
+  --ht-scrollbar-thumb-color: #E4E4E7;
+
+  /* Header */
+  --ht-header-font-weight: 500;
+  --ht-header-foreground-color: #71717B;
+  --ht-header-background-color: #F4F4F5;
+  --ht-header-highlighted-foreground-color: #09090B;
+  --ht-header-highlighted-background-color: #E4E4E7;
+  --ht-header-active-border-color: #09090B;
+  --ht-header-active-foreground-color: #09090B;
+  --ht-header-active-background-color: #E4E4E7;
+
+  /* Checkbox */
+  --ht-checkbox-size: 16px;
+  --ht-checkbox-border-radius: 4px;
+  --ht-checkbox-border-color: #E4E4E7;
+  --ht-checkbox-background-color: #FFFFFF;
+  --ht-checkbox-checked-border-color: #09090B;
+  --ht-checkbox-checked-background-color: #09090B;
+  --ht-checkbox-checked-icon-color: #FFFFFF;
+
+  /* Menu */
+  --ht-menu-border-width: 1px;
+  --ht-menu-border-radius: 8px;
+  --ht-menu-horizontal-padding: 4px;
+  --ht-menu-vertical-padding: 4px;
+  --ht-menu-item-horizontal-padding: 12px;
+  --ht-menu-item-vertical-padding: 8px;
+  --ht-menu-border-color: #E4E4E7;
+  --ht-menu-shadow-blur: 20px;
+  --ht-menu-shadow-color: rgba(0, 0, 0, 0.1);
+  --ht-menu-item-hover-color: #F4F4F5;
+  --ht-menu-item-active-color: #E4E4E7;
+
+  /* Button */
+  --ht-button-border-radius: 6px;
+  --ht-button-horizontal-padding: 16px;
+  --ht-button-vertical-padding: 8px;
+  --ht-primary-button-border-color: #09090B;
+  --ht-primary-button-foreground-color: #FFFFFF;
+  --ht-primary-button-background-color: #09090B;
+  --ht-primary-button-hover-background-color: #27272A;
+}
+
+/* Additional custom styles */
+.handsontable {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Select all checkbox styling */
+.select-all-checkbox {
+  cursor: pointer;
+  accent-color: #09090B;
+  width: 16px;
+  height: 16px;
+}
+
+/* Hover effect on rows */
+.handsontable tbody tr:hover td {
+  background-color: #FAFAFA !important;
+}
+
+/* Ensure proper scrollbar styling */
+.handsontable .wtHolder::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.handsontable .wtHolder::-webkit-scrollbar-track {
+  background: var(--ht-scrollbar-track-color);
+  border-radius: var(--ht-scrollbar-border-radius);
+}
+
+.handsontable .wtHolder::-webkit-scrollbar-thumb {
+  background: var(--ht-scrollbar-thumb-color);
+  border-radius: var(--ht-scrollbar-border-radius);
+}
+
+.handsontable .wtHolder::-webkit-scrollbar-thumb:hover {
+  background: #71717B;
+}

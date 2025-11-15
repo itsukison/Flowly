@@ -1,34 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+/**
+ * @deprecated This endpoint is deprecated. Use /api/records instead.
+ * The customers table has been replaced with a generic records table.
+ * This endpoint will be removed in a future version.
+ */
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+import { NextResponse } from 'next/server'
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export async function POST() {
+  return NextResponse.json(
+    { 
+      error: 'This endpoint is deprecated. Please use /api/records instead.',
+      migration_guide: 'The customers table has been replaced with the records table. Update your API calls to use /api/records.'
+    },
+    { status: 410 } // 410 Gone
+  )
+}
 
-    const body = await request.json()
-
-    const { data, error } = await supabase
-      .from('customers')
-      .insert({
-        ...body,
-        created_by: user.id,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error creating customer:', error)
-    return NextResponse.json(
-      { error: 'Failed to create customer' },
-      { status: 500 }
-    )
-  }
+export async function GET() {
+  return NextResponse.json(
+    { 
+      error: 'This endpoint is deprecated. Please use /api/records instead.',
+      migration_guide: 'The customers table has been replaced with the records table. Update your API calls to use /api/records.'
+    },
+    { status: 410 }
+  )
 }

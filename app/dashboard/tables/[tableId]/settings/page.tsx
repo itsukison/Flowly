@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import StatusManager from '@/components/tables/StatusManager'
+import StatusManager from '@/components/tables/managers/StatusManager'
 import { getIconComponent } from '@/lib/iconMapping'
 
 export default async function TableSettingsPage({

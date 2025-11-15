@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid ids' }, { status: 400 })
     }
 
-    // Get customers
-    const { data: customers, error } = await supabase
-      .from('customers')
+    // Get records
+    const { data: records, error } = await supabase
+      .from('records')
       .select('*')
       .in('id', ids)
 
@@ -27,13 +27,13 @@ export async function POST(request: NextRequest) {
 
     // Simple duplicate detection by name
     const duplicateGroups: Record<string, any[]> = {}
-    customers?.forEach(customer => {
-      const key = customer.name?.toLowerCase().trim()
+    records?.forEach(record => {
+      const key = record.name?.toLowerCase().trim()
       if (key) {
         if (!duplicateGroups[key]) {
           duplicateGroups[key] = []
         }
-        duplicateGroups[key].push(customer)
+        duplicateGroups[key].push(record)
       }
     })
 
