@@ -167,17 +167,17 @@ export function AIChatModal({
         <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0" ref={scrollRef}>
           <div className="space-y-4">
             {messages.map((message, index) => (
-              <div
+             <div
                 key={index}
                 className={`flex ${
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl p-4 ${
+                  className={`rounded-2xl p-4 ${
                     message.role === "user"
-                      ? "bg-[#F4F4F5] text-[#09090B]"
-                      : "bg-white border border-[#E4E4E7] text-[#09090B]"
+                      ? "max-w-[80%] bg-[#F4F4F5] text-[#09090B]"
+                      : "w-full text-[#09090B]"
                   }`}
                 >
                   {message.type === "text" ? (
@@ -246,7 +246,7 @@ export function AIChatModal({
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-[#E4E4E7] rounded-2xl p-4">
+                <div className="bg-white rounded-2xl p-4">
                   <div className="flex items-center gap-2 text-[#71717B]">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span className="text-sm">考え中...</span>

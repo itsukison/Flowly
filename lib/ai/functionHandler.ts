@@ -3,6 +3,9 @@ import {
   getStatistics,
   findDuplicates,
   searchRecords,
+  aggregateData,
+  queryWithDateRange,
+  getTopRecords,
   QueryResult,
 } from "@/lib/services/chatQueryService";
 
@@ -98,6 +101,77 @@ export async function executeFunctionCall(
         return {
           type: "table",
           content: `「${query}」で${result.rows.length}件のレコードが見つかりました：`,
+          data: result,
+        };
+      }
+
+      case "aggregate_data": {
+        const { field, operation, groupBy, dateRange, dateField } = args;
+        const result = await aggregateData(
+          tableId,
+          organizationId,
+          field,
+          operation,
+          groupBy,
+          dateRange,
+          dateField
+        );
+
+        return {
+          type: "text",
+          content: result,
+        };
+      }
+
+      case "query_with_date_range": {
+        const { dateRange, dateField, status, limit = 50, orderBy } = args;
+        const result = await queryWithDateRange(
+          tableId,
+          organizationId,
+          dateRange,
+          dateField,
+          { status },
+          Math.min(limit, 100),
+          orderBy
+        );
+
+        if (result.rows.length === 0) {
+          return {
+            type: "text",
+            content: "条件に一致するレコードが見つかりませんでした。",
+          };
+        }
+
+        return {
+          type: "table",
+          content: `${result.rows.length}件のレコードが見つかりました：`,
+          data: result,
+        };
+      }
+
+      case "get_top_records": {
+        const { field, limit = 10, dateRange, dateField, ascending = false } = args;
+        const result = await getTopRecords(
+          tableId,
+          organizationId,
+          field,
+          Math.min(limit, 100),
+          dateRange,
+          dateField,
+          ascending
+        );
+
+        if (result.rows.length === 0) {
+          return {
+            type: "text",
+            content: "レコードが見つかりませんでした。",
+          };
+        }
+
+        const direction = ascending ? "最小" : "最大";
+        return {
+          type: "table",
+          content: `${field}の${direction}値でソートした上位${result.rows.length}件：`,
           data: result,
         };
       }

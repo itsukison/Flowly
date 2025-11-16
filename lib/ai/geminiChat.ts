@@ -104,6 +104,97 @@ const functions: FunctionDeclaration[] = [
       required: ["query"],
     },
   },
+  {
+    name: "aggregate_data",
+    description: "Perform aggregation operations on numeric fields. Use when user asks for sum, average, max, min, highest, lowest, or total of numeric values. Can group by another field.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        field: {
+          type: SchemaType.STRING,
+          description: "The numeric field to aggregate (e.g., 'gmv', 'revenue', 'amount')",
+        },
+        operation: {
+          type: SchemaType.STRING,
+          description: "Aggregation operation: 'sum', 'avg', 'max', 'min', 'count'",
+          enum: ["sum", "avg", "max", "min", "count"],
+        },
+        groupBy: {
+          type: SchemaType.STRING,
+          description: "Optional field to group results by (e.g., 'status', 'company')",
+        },
+        dateRange: {
+          type: SchemaType.STRING,
+          description: "Optional date range filter: 'today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'this_year'",
+        },
+        dateField: {
+          type: SchemaType.STRING,
+          description: "Date field to filter on (default: 'created_at'). Can be 'created_at', 'updated_at', or custom date field",
+        },
+      },
+      required: ["field", "operation"],
+    },
+  },
+  {
+    name: "query_with_date_range",
+    description: "Query records filtered by date range. Use when user asks about records from specific time periods.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        dateRange: {
+          type: SchemaType.STRING,
+          description: "Date range: 'today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'this_year', 'last_year'",
+        },
+        dateField: {
+          type: SchemaType.STRING,
+          description: "Date field to filter on (default: 'created_at')",
+        },
+        status: {
+          type: SchemaType.STRING,
+          description: "Optional status filter",
+        },
+        limit: {
+          type: SchemaType.NUMBER,
+          description: "Maximum number of records to return (default: 50)",
+        },
+        orderBy: {
+          type: SchemaType.STRING,
+          description: "Column to sort by",
+        },
+      },
+      required: ["dateRange"],
+    },
+  },
+  {
+    name: "get_top_records",
+    description: "Get top N records sorted by a numeric field. Use when user asks for 'top', 'highest', 'best', 'largest' records.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        field: {
+          type: SchemaType.STRING,
+          description: "Numeric field to sort by (e.g., 'gmv', 'revenue', 'amount')",
+        },
+        limit: {
+          type: SchemaType.NUMBER,
+          description: "Number of top records to return (default: 10)",
+        },
+        dateRange: {
+          type: SchemaType.STRING,
+          description: "Optional date range filter: 'today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month'",
+        },
+        dateField: {
+          type: SchemaType.STRING,
+          description: "Date field to filter on (default: 'created_at')",
+        },
+        ascending: {
+          type: SchemaType.BOOLEAN,
+          description: "Sort ascending (lowest first) instead of descending (default: false)",
+        },
+      },
+      required: ["field"],
+    },
+  },
 ];
 
 export async function processAIQuery(
@@ -258,6 +349,29 @@ ${sampleDataText}
 3. 統計情報が必要な場合は、get_statistics関数を使用する
 4. 検索が必要な場合は、search_records関数を使用する
 5. 重複チェックが必要な場合は、find_duplicates関数を使用する
+6. 数値の集計（合計、平均、最大、最小）が必要な場合は、aggregate_data関数を使用する
+7. 特定の期間のデータが必要な場合は、query_with_date_range関数を使用する
+8. トップN件や最高値のレコードが必要な場合は、get_top_records関数を使用する
+
+日付範囲の指定：
+- 「今日」「本日」→ today
+- 「昨日」→ yesterday
+- 「今週」「今週中」→ this_week
+- 「先週」「前週」→ last_week
+- 「今月」「今月中」→ this_month
+- 「先月」「前月」→ last_month
+- 「今年」→ this_year
+- 「去年」「昨年」→ last_year
+
+数値集計の例：
+- 「GMVの合計は？」→ aggregate_data(field: "gmv", operation: "sum")
+- 「先週のGMVの合計は？」→ aggregate_data(field: "gmv", operation: "sum", dateRange: "last_week")
+- 「会社別の売上合計は？」→ aggregate_data(field: "revenue", operation: "sum", groupBy: "company")
+- 「最高のGMVは？」→ aggregate_data(field: "gmv", operation: "max")
+
+トップレコードの例：
+- 「GMVが最も高い会社は？」→ get_top_records(field: "gmv", limit: 1)
+- 「先週GMVが高かった上位5社は？」→ get_top_records(field: "gmv", limit: 5, dateRange: "last_week")
 
 常に簡潔で分かりやすい日本語で回答してください。
 複数のレコードを表示する場合は、関数を呼び出してテーブル形式で表示してください。`;
