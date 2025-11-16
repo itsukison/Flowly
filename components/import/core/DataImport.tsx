@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Upload, FileText, AlertCircle, CheckCircle, X } from 'lucide-react'
 import { parseExcel, parseCSV, validateFile } from '@/lib/utils/fileParser'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ export default function DataImport({ tableId, columns, onImportComplete }: DataI
   const [parsedData, setParsedData] = useState<any>(null)
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({})
   const [showMapping, setShowMapping] = useState(false)
+  const [deduplicate, setDeduplicate] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -143,7 +145,7 @@ export default function DataImport({ tableId, columns, onImportComplete }: DataI
           data: parsedData.data,
           mapping: columnMapping,
           options: {
-            deduplicate: true,
+            deduplicate: deduplicate,
             enrich: false
           }
         }),
@@ -175,6 +177,7 @@ export default function DataImport({ tableId, columns, onImportComplete }: DataI
     setParsedData(null)
     setColumnMapping({})
     setShowMapping(false)
+    setDeduplicate(false)
     setUploadStatus('idle')
     setErrorMessage('')
     if (fileInputRef.current) {
@@ -194,24 +197,8 @@ export default function DataImport({ tableId, columns, onImportComplete }: DataI
                 インポートファイルの列をテーブルの列にマッピングしてください
               </p>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleUpload}
-                disabled={isUploading || Object.keys(columnMapping).length === 0}
-                className="px-4 py-2 text-sm bg-[#09090B] text-white rounded-lg hover:bg-[#27272A] transition-colors disabled:opacity-50"
-              >
-                {isUploading ? 'インポート中...' : 'インポート開始'}
-              </button>
-              <button
-                onClick={resetForm}
-                disabled={isUploading}
-                className="px-4 py-2 text-sm border border-[#E4E4E7] rounded-lg hover:bg-[#F4F4F5] transition-colors disabled:opacity-50"
-              >
-                キャンセル
-              </button>
-            </div>
           </div>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-96 overflow-y-auto mb-4">
             {parsedData.headers.map((header: string) => (
               <div key={header} className="flex items-center gap-4">
                 <div className="flex-1">
@@ -247,6 +234,34 @@ export default function DataImport({ tableId, columns, onImportComplete }: DataI
                 </div>
               </div>
             ))}
+          </div>
+          
+          {/* Actions at bottom right */}
+          <div className="flex items-center justify-end gap-4 pt-2 -pd-2">
+            <label className="flex items-center gap-2 text-sm text-[#71717B] cursor-pointer">
+              <Checkbox
+                checked={deduplicate}
+                onCheckedChange={(checked) => setDeduplicate(checked === true)}
+              />
+              <span>重複検出</span>
+            </label>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={resetForm}
+                disabled={isUploading}
+                className="px-4 py-2 text-sm border border-[#E4E4E7] rounded-lg hover:bg-[#F4F4F5] transition-colors disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleUpload}
+                disabled={isUploading || Object.keys(columnMapping).length === 0}
+                className="px-4 py-2 text-sm bg-[#09090B] text-white rounded-lg hover:bg-[#27272A] transition-colors disabled:opacity-50"
+              >
+                {isUploading ? 'インポート中...' : 'インポート'}
+              </button>
+            </div>
           </div>
         </div>
       )}

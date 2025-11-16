@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AlertTriangle, Info, CheckCircle } from 'lucide-react'
+import { DeduplicationConfig } from '@/components/tables/modals/DeduplicationConfig'
 
 interface DataPreviewProps {
   data: any[]
@@ -12,7 +13,13 @@ interface DataPreviewProps {
     missingPhone: any[]
     totalRows: number
   }
-  onImport: (options: { deduplicate: boolean; enrich: boolean }) => void
+  columns: any[]
+  onImport: (options: { 
+    deduplicate: boolean
+    deduplicateColumns: string[]
+    deduplicateMatchType: 'exact' | 'fuzzy'
+    enrich: boolean 
+  }) => void
   onBack: () => void
 }
 
@@ -20,10 +27,13 @@ export default function DataPreview({
   data,
   mapping,
   detectionResults,
+  columns,
   onImport,
   onBack,
 }: DataPreviewProps) {
   const [deduplicate, setDeduplicate] = useState(false)
+  const [deduplicateColumns, setDeduplicateColumns] = useState<string[]>([])
+  const [deduplicateMatchType, setDeduplicateMatchType] = useState<'exact' | 'fuzzy'>('exact')
   const [enrich, setEnrich] = useState(false)
 
   const hasDuplicates = detectionResults.duplicates.length > 0
@@ -59,36 +69,29 @@ export default function DataPreview({
 
         {/* Duplicates Warning */}
         {hasDuplicates && (
-          <div className="border border-[#E4E4E7] rounded-lg overflow-hidden">
-            <div className="flex items-start gap-3 p-4 bg-orange-50 border-b border-orange-200">
-              <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-semibold text-orange-900 mb-1">
-                  {detectionResults.duplicates.length}件の重複の可能性
-                </p>
-                <p className="text-sm text-orange-700">
-                  同じ名前のレコードが見つかりました
-                </p>
-              </div>
-            </div>
-            <div className="p-4 bg-white">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={deduplicate}
-                  onChange={(e) => setDeduplicate(e.target.checked)}
-                  className="mt-1 w-4 h-4 rounded border-[#E4E4E7] text-[#09090B] focus:ring-[#09090B]"
-                />
-                <div>
-                  <p className="font-medium text-[#09090B]">重複を自動マージ</p>
-                  <p className="text-sm text-[#71717B] mt-1">
-                    重複レコードを検出して、最新の情報でマージします
-                  </p>
-                </div>
-              </label>
+          <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-orange-900 mb-1">
+                {detectionResults.duplicates.length}件の重複の可能性
+              </p>
+              <p className="text-sm text-orange-700">
+                同じ名前のレコードが見つかりました
+              </p>
             </div>
           </div>
         )}
+
+        {/* Deduplication Configuration */}
+        <DeduplicationConfig
+          columns={columns}
+          enabled={deduplicate}
+          onEnabledChange={setDeduplicate}
+          selectedColumns={deduplicateColumns}
+          onSelectedColumnsChange={setDeduplicateColumns}
+          matchType={deduplicateMatchType}
+          onMatchTypeChange={setDeduplicateMatchType}
+        />
 
         {/* Missing Data Info */}
         {hasMissingData && (
@@ -175,8 +178,14 @@ export default function DataPreview({
           戻る
         </button>
         <button
-          onClick={() => onImport({ deduplicate, enrich })}
-          className="flex-1 px-4 py-3 bg-[#09090B] text-white rounded-lg hover:bg-[#27272A] transition-colors font-medium"
+          onClick={() => onImport({ 
+            deduplicate, 
+            deduplicateColumns,
+            deduplicateMatchType,
+            enrich 
+          })}
+          disabled={deduplicate && deduplicateColumns.length === 0}
+          className="flex-1 px-4 py-3 bg-[#09090B] text-white rounded-lg hover:bg-[#27272A] transition-colors font-medium disabled:opacity-50"
         >
           インポート開始
         </button>

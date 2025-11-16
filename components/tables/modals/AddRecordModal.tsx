@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus, Trash2 } from "lucide-react";
 import DynamicFieldRenderer from "../core/DynamicFieldRenderer";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RowData {
   [key: string]: any;
@@ -25,6 +33,7 @@ export default function AddRecordModal({
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deduplicate, setDeduplicate] = useState(false);
 
   const addRow = () => {
     setRows([
@@ -154,82 +163,88 @@ export default function AddRecordModal({
           className="flex-1 overflow-hidden flex flex-col"
         >
           <div className="flex-1 overflow-auto">
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 bg-[#FAFAFA] z-10">
-                <tr>
-                  <th className="border border-[#E4E4E7] px-4 py-3 text-left text-xs font-semibold text-[#71717B] w-12">
-                    #
-                  </th>
-                  {columns.map((column: any) => (
-                    <th
-                      key={column.id}
-                      className="border border-[#E4E4E7] px-4 py-3 text-left text-xs font-semibold text-[#71717B] min-w-[200px]"
-                    >
-                      {column.label}
-                      {column.is_required && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse min-w-max">
+                <thead className="sticky top-0 bg-[#FAFAFA] z-10">
+                  <tr>
+                    <th className="sticky left-0 z-20 border border-[#E4E4E7] px-4 py-3 text-left text-xs font-semibold text-[#71717B] min-w-[60px] bg-[#FAFAFA]">
+                      #
                     </th>
-                  ))}
-                  <th className="border border-[#E4E4E7] px-4 py-3 text-left text-xs font-semibold text-[#71717B] min-w-[150px]">
-                    ステータス
-                  </th>
-                  <th className="border border-[#E4E4E7] px-4 py-3 w-12"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, rowIndex) => (
-                  <tr
-                    key={row._tempId}
-                    className="hover:bg-[#F4F4F5] transition-colors"
-                  >
-                    <td className="border border-[#E4E4E7] px-4 py-2 text-sm text-[#71717B] text-center">
-                      {rowIndex + 1}
-                    </td>
                     {columns.map((column: any) => (
-                      <td
+                      <th
                         key={column.id}
-                        className="border border-[#E4E4E7] p-2"
+                        className="border border-[#E4E4E7] px-4 py-3 text-left text-xs font-semibold text-[#71717B] min-w-[200px] whitespace-nowrap"
                       >
-                        <DynamicFieldRenderer
-                          column={column}
-                          value={row[column.name]}
-                          onChange={(value) =>
-                            updateCell(row._tempId, column.name, value)
-                          }
-                        />
-                      </td>
+                        {column.label}
+                        {column.is_required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </th>
                     ))}
-                    <td className="border border-[#E4E4E7] p-2">
-                      <select
-                        value={row.status || statuses[0]?.name || ""}
-                        onChange={(e) =>
-                          updateCell(row._tempId, "status", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-[#E4E4E7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#09090B] text-sm bg-white"
-                      >
-                        {statuses.map((status: any) => (
-                          <option key={status.id} value={status.name}>
-                            {status.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="border border-[#E4E4E7] p-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeRow(row._tempId)}
-                        disabled={rows.length === 1}
-                        className="p-1.5 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="行を削除"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-                    </td>
+                    <th className="border border-[#E4E4E7] px-4 py-3 text-left text-xs font-semibold text-[#71717B] min-w-[180px] whitespace-nowrap">
+                      ステータス
+                    </th>
+                    <th className="border border-[#E4E4E7] px-4 py-3 min-w-[60px]"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((row, rowIndex) => (
+                    <tr
+                      key={row._tempId}
+                      className="hover:bg-[#F4F4F5] transition-colors"
+                    >
+                      <td className="sticky left-0 z-10 border border-[#E4E4E7] px-4 py-2 text-sm text-[#71717B] text-center bg-inherit">
+                        {rowIndex + 1}
+                      </td>
+                      {columns.map((column: any) => (
+                        <td
+                          key={column.id}
+                          className="border border-[#E4E4E7] p-2"
+                        >
+                          <DynamicFieldRenderer
+                            column={column}
+                            value={row[column.name]}
+                            onChange={(value) =>
+                              updateCell(row._tempId, column.name, value)
+                            }
+                          />
+                        </td>
+                      ))}
+                      <td className="border border-[#E4E4E7] p-2">
+                        <Select
+                          value={row.status || statuses[0]?.name || ""}
+                          onValueChange={(value) =>
+                            updateCell(row._tempId, "status", value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="ステータスを選択" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statuses.map((status: any) => (
+                              <SelectItem key={status.id} value={status.name}>
+                                {status.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="border border-[#E4E4E7] p-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeRow(row._tempId)}
+                          disabled={rows.length === 1}
+                          className="p-1.5 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="行を削除"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Footer Actions */}
@@ -250,22 +265,32 @@ export default function AddRecordModal({
                 </div>
               )}
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-6 py-2 border border-[#E4E4E7] rounded-lg hover:bg-[#F4F4F5] transition-colors font-medium"
-                  disabled={loading}
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-2 bg-[#09090B] text-white rounded-lg hover:bg-[#27272A] disabled:opacity-50 transition-colors font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
-                >
-                  {loading ? "作成中..." : `${rows.length}件のレコードを作成`}
-                </button>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-[#71717B] cursor-pointer">
+                  <Checkbox
+                    checked={deduplicate}
+                    onCheckedChange={setDeduplicate}
+                  />
+                  <span>重複を検出して削除</span>
+                </label>
+                
+                <div className="flex gap-3 ml-auto">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-6 py-2 border border-[#E4E4E7] rounded-lg hover:bg-[#F4F4F5] transition-colors font-medium"
+                    disabled={loading}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2 bg-[#09090B] text-white rounded-lg hover:bg-[#27272A] disabled:opacity-50 transition-colors font-medium shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
+                  >
+                    {loading ? "作成中..." : `${rows.length}件のレコードを作成`}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

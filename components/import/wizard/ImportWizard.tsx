@@ -42,11 +42,32 @@ export default function ImportWizard({ organizationId, userId, tables, users }: 
     setStep('mapping')
   }
 
-  const handleMappingComplete = (mapping: Record<string, string>) => {
+  const handleMappingComplete = async (mapping: Record<string, string>) => {
     setColumnMapping(mapping)
     // Run detection
-    detectIssues(parsedData.data, mapping)
+    await detectIssues(parsedData.data, mapping)
     setStep('preview')
+  }
+
+  // Fetch columns for the selected table
+  const [columns, setColumns] = useState<any[]>([])
+  
+  const fetchColumns = async (tableId: string) => {
+    try {
+      const response = await fetch(`/api/tables/${tableId}/columns`)
+      if (response.ok) {
+        const data = await response.json()
+        setColumns(data)
+      }
+    } catch (error) {
+      console.error('Error fetching columns:', error)
+    }
+  }
+
+  const handleTableSelectWithColumns = async (table: Table) => {
+    setSelectedTable(table)
+    await fetchColumns(table.id)
+    setStep('upload')
   }
 
   const detectIssues = async (data: any[], mapping: Record<string, string>) => {
@@ -88,7 +109,12 @@ export default function ImportWizard({ organizationId, userId, tables, users }: 
     })
   }
 
-  const handleImport = async (options: { deduplicate: boolean; enrich: boolean }) => {
+  const handleImport = async (options: { 
+    deduplicate: boolean
+    deduplicateColumns: string[]
+    deduplicateMatchType: 'exact' | 'fuzzy'
+    enrich: boolean 
+  }) => {
     setStep('importing')
 
     try {
@@ -155,7 +181,7 @@ export default function ImportWizard({ organizationId, userId, tables, users }: 
         {step === 'table' && (
           <TableSelector
             tables={tables}
-            onSelect={handleTableSelect}
+            onSelect={handleTableSelectWithColumns}
             organizationId={organizationId}
           />
         )}
@@ -175,11 +201,12 @@ export default function ImportWizard({ organizationId, userId, tables, users }: 
           />
         )}
 
-        {step === 'preview' && detectionResults && (
+        {step === 'preview' && detectionResults && selectedTable && (
           <DataPreview
             data={parsedData.data}
             mapping={columnMapping}
             detectionResults={detectionResults}
+            columns={columns}
             onImport={handleImport}
             onBack={() => setStep('mapping')}
           />
