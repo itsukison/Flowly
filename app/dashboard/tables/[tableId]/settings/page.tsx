@@ -47,7 +47,14 @@ export default async function TableSettingsPage({
       <div className="space-y-6">
         <TableSettingsForm
           tableId={tableId}
-          initialData={table}
+          initialData={{
+            id: table.id,
+            name: table.name,
+            description: table.description,
+            icon: table.icon || '',
+            created_at: table.created_at,
+            updated_at: table.updated_at
+          }}
         />
         <StatusManager tableId={tableId} statuses={statuses || []} />
       </div>

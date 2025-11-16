@@ -137,7 +137,7 @@ export default async function SettingsPage() {
                         )}
                       </div>
 
-                      {item.type === 'text' && !item.readonly && (
+                      {item.type === 'text' && !('readonly' in item && item.readonly) && (
                         <Input
                           id={`${section.title}-${item.label}`}
                           defaultValue={item.value}
