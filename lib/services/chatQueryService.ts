@@ -659,7 +659,7 @@ export async function getTopRecords(
     .map((record) => {
       let value: any;
       if (["name", "email", "company", "status"].includes(field)) {
-        value = record[field];
+        value = record[field as keyof typeof record];
       } else if (record.data && typeof record.data === "object") {
         value = (record.data as Record<string, any>)[field];
       }

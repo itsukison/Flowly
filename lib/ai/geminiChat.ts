@@ -116,6 +116,7 @@ const functions: FunctionDeclaration[] = [
         },
         operation: {
           type: SchemaType.STRING,
+          format: "enum",
           description: "Aggregation operation: 'sum', 'avg', 'max', 'min', 'count'",
           enum: ["sum", "avg", "max", "min", "count"],
         },
