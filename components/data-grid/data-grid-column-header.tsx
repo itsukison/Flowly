@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Cell } from "@/types/data-grid";
+import { Edit2Icon, Trash2Icon } from "lucide-react";
 
 function getColumnVariant(variant?: Cell["variant"]): {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -68,6 +69,8 @@ interface DataGridColumnHeaderProps<TData, TValue>
   extends React.ComponentProps<typeof DropdownMenuTrigger> {
   header: Header<TData, TValue>;
   table: Table<TData>;
+  onEditColumn?: (columnId: string, currentLabel: string) => void;
+  onDeleteColumn?: (columnId: string, columnLabel: string) => void;
 }
 
 export function DataGridColumnHeader<TData, TValue>({
@@ -75,6 +78,8 @@ export function DataGridColumnHeader<TData, TValue>({
   table,
   className,
   onPointerDown,
+  onEditColumn,
+  onDeleteColumn,
   ...props
 }: DataGridColumnHeaderProps<TData, TValue>) {
   const column = header.column;
@@ -148,6 +153,18 @@ export function DataGridColumnHeader<TData, TValue>({
     [table.options.meta, column.id, onPointerDown]
   );
 
+  const handleEditColumn = React.useCallback(() => {
+    onEditColumn?.(column.id, label);
+  }, [onEditColumn, column.id, label]);
+
+  const handleDeleteColumn = React.useCallback(() => {
+    onDeleteColumn?.(column.id, label);
+  }, [onDeleteColumn, column.id, label]);
+
+  // Don't show edit/delete for special columns
+  const isSpecialColumn = column.id === "select" || column.id === "status";
+  const canEditDelete = !isSpecialColumn && (onEditColumn || onDeleteColumn);
+
   return (
     <>
       <DropdownMenu>
@@ -184,7 +201,7 @@ export function DataGridColumnHeader<TData, TValue>({
                 onClick={() => onSortingChange("asc")}
               >
                 <ChevronUpIcon />
-                Sort asc
+                昇順で並び替え
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 className="relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground"
@@ -192,12 +209,12 @@ export function DataGridColumnHeader<TData, TValue>({
                 onClick={() => onSortingChange("desc")}
               >
                 <ChevronDownIcon />
-                Sort desc
+                降順で並び替え
               </DropdownMenuCheckboxItem>
               {column.getIsSorted() && (
                 <DropdownMenuItem onClick={onSortRemove}>
                   <XIcon />
-                  Remove sort
+                  並び替えを解除
                 </DropdownMenuItem>
               )}
             </>
@@ -212,7 +229,7 @@ export function DataGridColumnHeader<TData, TValue>({
                   onClick={onUnpin}
                 >
                   <PinOffIcon />
-                  Unpin from left
+                  左固定を解除
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
@@ -220,7 +237,7 @@ export function DataGridColumnHeader<TData, TValue>({
                   onClick={onLeftPin}
                 >
                   <PinIcon />
-                  Pin to left
+                  左に固定
                 </DropdownMenuItem>
               )}
               {isPinnedRight ? (
@@ -229,7 +246,7 @@ export function DataGridColumnHeader<TData, TValue>({
                   onClick={onUnpin}
                 >
                   <PinOffIcon />
-                  Unpin from right
+                  右固定を解除
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
@@ -237,7 +254,7 @@ export function DataGridColumnHeader<TData, TValue>({
                   onClick={onRightPin}
                 >
                   <PinIcon />
-                  Pin to right
+                  右に固定
                 </DropdownMenuItem>
               )}
             </>
@@ -251,8 +268,31 @@ export function DataGridColumnHeader<TData, TValue>({
                 onClick={() => column.toggleVisibility(false)}
               >
                 <EyeOffIcon />
-                Hide column
+                列を非表示
               </DropdownMenuCheckboxItem>
+            </>
+          )}
+          {canEditDelete && (
+            <>
+              <DropdownMenuSeparator />
+              {onEditColumn && (
+                <DropdownMenuItem
+                  className="[&_svg]:text-muted-foreground"
+                  onClick={handleEditColumn}
+                >
+                  <Edit2Icon />
+                  列名を編集
+                </DropdownMenuItem>
+              )}
+              {onDeleteColumn && (
+                <DropdownMenuItem
+                  className="[&_svg]:text-muted-foreground text-red-600"
+                  onClick={handleDeleteColumn}
+                >
+                  <Trash2Icon />
+                  列を削除
+                </DropdownMenuItem>
+              )}
             </>
           )}
         </DropdownMenuContent>

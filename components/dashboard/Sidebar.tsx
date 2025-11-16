@@ -8,7 +8,6 @@ import {
   ChevronRight,
   LayoutGrid,
   Database,
-  Columns,
   Settings,
   User,
 } from "lucide-react";
@@ -89,11 +88,6 @@ export default function DashboardSidebar() {
       name: "データ",
       href: tableContext ? `/dashboard/tables/${tableContext.tableId}/data` : "#",
       icon: Database,
-    },
-    {
-      name: "列の管理",
-      href: tableContext ? `/dashboard/tables/${tableContext.tableId}/columns` : "#",
-      icon: Columns,
     },
     {
       name: "設定",

@@ -10,6 +10,8 @@ import { useDataGrid } from "@/hooks/use-data-grid";
 import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
 import { EnrichmentModal } from "@/components/tables/modals/EnrichmentModal";
 import { AIChatModal } from "@/components/tables/modals/AIChatModal";
+import { EditColumnModal } from "@/components/tables/modals/EditColumnModal";
+import { AddColumnModal } from "@/components/tables/modals/AddColumnModal";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -117,6 +119,9 @@ export default function DiceTableView({
   const [recordsForEnrichment, setRecordsForEnrichment] = useState<NormalizedTableRecord[]>([]);
   const [enrichmentStatus, setEnrichmentStatus] = useState<'idle' | 'processing' | 'done'>('idle');
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
+  const [editingColumn, setEditingColumn] = useState<{ id: string; label: string } | null>(null);
+  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
 
   // Set table context for sidebar
   useEffect(() => {
@@ -439,6 +444,97 @@ export default function DiceTableView({
     },
     [router]
   );
+
+  // Handle editing column
+  const handleEditColumn = useCallback((columnId: string, currentLabel: string) => {
+    // Find the actual column data
+    const column = columns.find(col => col.name === columnId);
+    if (column) {
+      setEditingColumn({ id: column.id, label: currentLabel });
+      setIsEditColumnOpen(true);
+    }
+  }, [columns]);
+
+  // Handle saving column edit
+  const handleSaveColumnEdit = useCallback(async (columnId: string, newLabel: string) => {
+    try {
+      const response = await fetch(`/api/columns/${columnId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newLabel }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update column");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating column:", error);
+      throw error;
+    }
+  }, [router]);
+
+  // Handle deleting column
+  const handleDeleteColumn = useCallback(async (columnId: string, columnLabel: string) => {
+    const confirmed = window.confirm(
+      `「${columnLabel}」列を削除してもよろしいですか？\n\nこの操作は取り消せません。この列のすべてのデータが失われます。`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // Find the actual column data
+      const column = columns.find(col => col.name === columnId);
+      if (!column) {
+        throw new Error("Column not found");
+      }
+
+      const response = await fetch(`/api/columns/${column.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete column");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting column:", error);
+      alert("列の削除に失敗しました");
+    }
+  }, [columns, router]);
+
+  // Handle adding column
+  const handleAddColumn = useCallback(() => {
+    setIsAddColumnOpen(true);
+  }, []);
+
+  // Handle saving new column
+  const handleSaveNewColumn = useCallback(async (columnData: {
+    table_id: string;
+    name: string;
+    label: string;
+    type: string;
+    display_order: number;
+  }) => {
+    try {
+      const response = await fetch(`/api/columns`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(columnData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create column");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error creating column:", error);
+      throw error;
+    }
+  }, [router]);
 
   // Handle deduplication confirmation
   const handleDeduplicationConfirm = useCallback(
@@ -850,7 +946,13 @@ export default function DiceTableView({
 
         {/* Scrollable Table Container - Takes remaining space */}
         <div className="flex-1 overflow-hidden">
-          <DataGrid table={dataGridTable} {...dataGridProps} />
+          <DataGrid 
+            table={dataGridTable} 
+            {...dataGridProps}
+            onEditColumn={handleEditColumn}
+            onDeleteColumn={handleDeleteColumn}
+            onAddColumn={handleAddColumn}
+          />
         </div>
 
         {/* Keyboard Shortcuts Dialog */}
@@ -900,6 +1002,26 @@ export default function DiceTableView({
         tableId={table.id}
         tableName={table.name}
         columns={columns}
+      />
+
+      {/* Edit Column Modal */}
+      {editingColumn && (
+        <EditColumnModal
+          open={isEditColumnOpen}
+          onOpenChange={setIsEditColumnOpen}
+          columnId={editingColumn.id}
+          currentLabel={editingColumn.label}
+          onSave={handleSaveColumnEdit}
+        />
+      )}
+
+      {/* Add Column Modal */}
+      <AddColumnModal
+        open={isAddColumnOpen}
+        onOpenChange={setIsAddColumnOpen}
+        tableId={table.id}
+        displayOrder={columns.length}
+        onAdd={handleSaveNewColumn}
       />
     </>
   );

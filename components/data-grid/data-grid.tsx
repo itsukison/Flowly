@@ -15,6 +15,9 @@ interface DataGridProps<TData>
   extends ReturnType<typeof useDataGrid<TData>>,
     React.ComponentProps<"div"> {
   height?: number;
+  onEditColumn?: (columnId: string, currentLabel: string) => void;
+  onDeleteColumn?: (columnId: string, columnLabel: string) => void;
+  onAddColumn?: () => void;
 }
 
 export function DataGrid<TData>({
@@ -28,6 +31,9 @@ export function DataGrid<TData>({
   searchState,
   columnSizeVars,
   onRowAdd,
+  onEditColumn,
+  onDeleteColumn,
+  onAddColumn,
   className,
   ...props
 }: DataGridProps<TData>) {
@@ -135,11 +141,37 @@ export function DataGrid<TData>({
                         )}
                       </div>
                     ) : (
-                      <DataGridColumnHeader header={header} table={table} />
+                      <DataGridColumnHeader 
+                        header={header} 
+                        table={table}
+                        onEditColumn={onEditColumn}
+                        onDeleteColumn={onDeleteColumn}
+                      />
                     )}
                   </div>
                 );
               })}
+              {onAddColumn && (
+                <div
+                  role="columnheader"
+                  aria-colindex={headerGroup.headers.length + 1}
+                  data-slot="grid-add-column-cell"
+                  tabIndex={0}
+                  className="relative flex h-9 w-32 shrink-0 items-center justify-center border-r bg-muted/30 transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none cursor-pointer"
+                  onClick={onAddColumn}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onAddColumn();
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Plus className="size-3" />
+                    <span className="text-xs font-medium">列を追加</span>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -195,7 +227,7 @@ export function DataGrid<TData>({
               >
                 <div className="sticky left-0 flex items-center gap-2 px-2 text-muted-foreground">
                   <Plus className="size-3" />
-                  <span className="text-xs">Add row</span>
+                  <span className="text-xs">行を追加</span>
                 </div>
               </div>
             </div>

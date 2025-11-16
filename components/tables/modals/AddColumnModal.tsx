@@ -1,196 +1,168 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { X } from 'lucide-react'
-
-const FIELD_TYPES = [
-  { value: 'text', label: 'テキスト' },
-  { value: 'textarea', label: 'テキストエリア' },
-  { value: 'number', label: '数値' },
-  { value: 'email', label: 'メール' },
-  { value: 'phone', label: '電話番号' },
-  { value: 'url', label: 'URL' },
-  { value: 'date', label: '日付' },
-  { value: 'boolean', label: 'チェックボックス' },
-  { value: 'select', label: 'ドロップダウン' },
-  { value: 'multiselect', label: '複数選択' },
-]
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AddColumnModalProps {
-  tableId: string
-  existingColumns: any[]
-  onClose: () => void
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  tableId: string;
+  displayOrder?: number;
+  onAdd?: (columnData: {
+    table_id: string;
+    name: string;
+    label: string;
+    type: string;
+    display_order: number;
+  }) => Promise<void>;
+  // Legacy props for backward compatibility
+  existingColumns?: any[];
+  onClose?: () => void;
 }
 
-export default function AddColumnModal({ tableId, existingColumns, onClose }: AddColumnModalProps) {
-  const router = useRouter()
-  const [name, setName] = useState('')
-  const [label, setLabel] = useState('')
-  const [type, setType] = useState('text')
-  const [isRequired, setIsRequired] = useState(false)
-  const [options, setOptions] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export function AddColumnModal({
+  open = true,
+  onOpenChange,
+  tableId,
+  displayOrder = 0,
+  onAdd,
+  existingColumns,
+  onClose,
+}: AddColumnModalProps) {
+  // Support legacy onClose prop
+  const handleOpenChange = onOpenChange || ((isOpen: boolean) => {
+    if (!isOpen && onClose) {
+      onClose();
+    }
+  });
+  const [label, setLabel] = useState("");
+  const [type, setType] = useState("text");
+  const [isAdding, setIsAdding] = useState(false);
 
-  const needsOptions = type === 'select' || type === 'multiselect'
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!name.trim() || !label.trim()) {
-      setError('フィールド名とラベルは必須です')
-      return
+  const handleAdd = async () => {
+    if (!label.trim()) {
+      alert("列名を入力してください");
+      return;
     }
 
-    if (existingColumns.some(col => col.name === name)) {
-      setError('このフィールド名は既に使用されています')
-      return
-    }
-
-    if (needsOptions && !options.trim()) {
-      setError('選択肢を入力してください')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
+    setIsAdding(true);
     try {
-      const response = await fetch('/api/columns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          table_id: tableId,
-          name: name.trim(),
-          label: label.trim(),
-          type,
-          is_required: isRequired,
-          options: needsOptions ? options.split('\n').filter(o => o.trim()) : null,
-          display_order: existingColumns.length + 1,
-        }),
-      })
+      // Generate a safe column name from the label
+      const name = label
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
 
-      if (!response.ok) throw new Error('Failed to create column')
+      const columnData = {
+        table_id: tableId,
+        name: name || `column_${Date.now()}`,
+        label: label.trim(),
+        type,
+        display_order: displayOrder,
+      };
 
-      router.refresh()
-      onClose()
-    } catch (err) {
-      setError('列の作成に失敗しました')
+      if (onAdd) {
+        await onAdd(columnData);
+      } else {
+        // Legacy: call API directly
+        const response = await fetch("/api/columns", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(columnData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create column");
+        }
+
+        window.location.reload();
+      }
+
+      // Reset form
+      setLabel("");
+      setType("text");
+      handleOpenChange(false);
+    } catch (error) {
+      console.error("Error adding column:", error);
+      alert("列の追加に失敗しました");
     } finally {
-      setLoading(false)
+      setIsAdding(false);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-[10px] flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-[12px_12px_20px_-2px_rgba(0,0,0,0.09),6px_6px_10px_-2px_rgba(0,0,0,0.32),3px_3px_5px_-1px_rgba(0,0,0,0.41)]">
-        <div className="border-b border-[#E4E4E7] px-8 py-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-[#09090B]">列を追加</h2>
-          <button onClick={onClose} className="p-2 hover:bg-[#F4F4F5] rounded-xl transition-colors">
-            <X className="w-6 h-6 text-[#71717B]" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
-          <div>
-            <label className="block text-base font-bold text-[#09090B] mb-3">
-              フィールド名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-              placeholder="例: company_name"
-              className="w-full px-5 py-4 text-base border border-[#E4E4E7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#09090B] focus:border-[#09090B] transition-all"
-            />
-            <p className="text-sm text-[#71717B] mt-2">
-              英数字とアンダースコアのみ使用可能
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-base font-bold text-[#09090B] mb-3">
-              表示ラベル <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>列を追加</DialogTitle>
+          <DialogDescription>
+            新しい列を追加します。後から編集できます。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="label">列名</Label>
+            <Input
+              id="label"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="例: 会社名"
-              className="w-full px-5 py-4 text-base border border-[#E4E4E7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#09090B] focus:border-[#09090B] transition-all"
+              placeholder="例: 電話番号"
+              autoFocus
             />
           </div>
-
-          <div>
-            <label className="block text-base font-bold text-[#09090B] mb-3">
-              フィールドタイプ
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="w-full px-5 py-4 text-base border border-[#E4E4E7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#09090B] focus:border-[#09090B] transition-all"
-            >
-              {FIELD_TYPES.map((ft) => (
-                <option key={ft.value} value={ft.value}>
-                  {ft.label}
-                </option>
-              ))}
-            </select>
+          <div className="grid gap-2">
+            <Label htmlFor="type">列の種類</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger id="type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="text">テキスト</SelectItem>
+                <SelectItem value="textarea">長文テキスト</SelectItem>
+                <SelectItem value="number">数値</SelectItem>
+                <SelectItem value="email">メール</SelectItem>
+                <SelectItem value="phone">電話番号</SelectItem>
+                <SelectItem value="url">URL</SelectItem>
+                <SelectItem value="date">日付</SelectItem>
+                <SelectItem value="boolean">チェックボックス</SelectItem>
+                <SelectItem value="select">選択</SelectItem>
+                <SelectItem value="multiselect">複数選択</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
-          {needsOptions && (
-            <div>
-              <label className="block text-base font-bold text-[#09090B] mb-3">
-                選択肢（1行に1つ）
-              </label>
-              <textarea
-                value={options}
-                onChange={(e) => setOptions(e.target.value)}
-                placeholder="選択肢1&#10;選択肢2&#10;選択肢3"
-                rows={5}
-                className="w-full px-5 py-4 text-base border border-[#E4E4E7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#09090B] focus:border-[#09090B] transition-all leading-[1.6]"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={isRequired}
-                onChange={(e) => setIsRequired(e.target.checked)}
-                className="w-5 h-5 rounded border-[#E4E4E7] text-[#09090B] focus:ring-[#09090B]"
-              />
-              <span className="text-base text-[#09090B] font-medium">必須フィールド</span>
-            </label>
-          </div>
-
-          {error && (
-            <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-600">
-              {error}
-            </div>
-          )}
-
-          <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-4 border border-[#E4E4E7] rounded-xl text-base font-semibold hover:bg-[#F4F4F5] transition-colors"
-              disabled={loading}
-            >
-              キャンセル
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-6 py-4 bg-[#09090B] text-white rounded-xl text-base font-bold hover:bg-[#27272A] disabled:opacity-50 transition-colors shadow-[0px_4px_20px_rgba(0,0,0,0.15)]"
-            >
-              {loading ? '作成中...' : '作成'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isAdding}
+          >
+            キャンセル
+          </Button>
+          <Button onClick={handleAdd} disabled={isAdding}>
+            {isAdding ? "追加中..." : "追加"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
