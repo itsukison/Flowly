@@ -20,6 +20,7 @@ A modern, responsive CRM platform built with Next.js 16, Tailwind CSS, Supabase,
 - **Custom Animations**: Slideshow, ticker, and noise effect components
 - **Modern UI**: Clean design following styling.md guidelines
 - **Supabase Auth**: Sign up, login, logout functionality (Phase 1)
+- **Data Deduplication**: Smart duplicate detection with exact and fuzzy matching (Phase 3)
 
 ## Tech Stack
 

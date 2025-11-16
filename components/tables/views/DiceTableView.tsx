@@ -6,8 +6,9 @@ import { Menu } from "lucide-react";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
-import { DataGridRowHeightMenu } from "@/components/data-grid/data-grid-row-height-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
+import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
+import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -108,6 +109,8 @@ export default function DiceTableView({
     "idle" | "saving" | "saved" | "error"
   >("idle");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDeduplicationOpen, setIsDeduplicationOpen] = useState(false);
+  const [recordsForDeduplication, setRecordsForDeduplication] = useState<NormalizedTableRecord[]>([]);
 
   // Set table context for sidebar
   useEffect(() => {
@@ -419,6 +422,29 @@ export default function DiceTableView({
     [router]
   );
 
+  // Handle deduplication confirmation
+  const handleDeduplicationConfirm = useCallback(
+    async (recordIds: string[]) => {
+      try {
+        for (const recordId of recordIds) {
+          const response = await fetch(`/api/records/${recordId}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to delete record");
+          }
+        }
+
+        router.refresh();
+      } catch (error) {
+        console.error("Error deleting duplicates:", error);
+        throw error;
+      }
+    },
+    [router]
+  );
+
   // Transform columns to Dice UI format
   const diceColumns = useMemo<ColumnDef<NormalizedTableRecord>[]>(() => {
     const cols: ColumnDef<NormalizedTableRecord>[] = [];
@@ -602,7 +628,10 @@ export default function DiceTableView({
       {/* Main Content */}
       <div className="fixed inset-0 pt-16 z-30 flex flex-col bg-white">
         {/* Sticky Toolbar - Fixed at top, won't scroll with table */}
-        <div className="sticky top-0 z-20 flex items-center justify-between px-4 h-12 bg-white border-b border-[#E4E4E7] shrink-0">
+        <div 
+          data-grid-popover 
+          className="sticky top-0 z-20 flex items-center justify-between px-4 h-12 bg-white border-b border-[#E4E4E7] shrink-0"
+        >
           <div className="flex items-center gap-3">
             {/* Sidebar Toggle Button */}
             <button
@@ -680,7 +709,42 @@ export default function DiceTableView({
           </div>
           <div className="flex items-center gap-2">
             <DataGridSortMenu table={dataGridTable} />
-            <DataGridRowHeightMenu table={dataGridTable} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                // Prevent any default behavior and stop propagation
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Immediately capture selected rows before any state changes
+                const selectedRows = dataGridTable.getSelectedRowModel().rows;
+                
+                if (selectedRows.length < 2) {
+                  alert('重複を検出するには、少なくとも2つの行を選択してください');
+                  return;
+                }
+                
+                // Extract and store the records immediately
+                const records = selectedRows
+                  .map(row => row.original)
+                  .filter(record => !record.id.startsWith('temp-'));
+                
+                // Store records in state before opening modal
+                setRecordsForDeduplication(records);
+                
+                // Now open the modal
+                setIsDeduplicationOpen(true);
+              }}
+              disabled={dataGridTable.getSelectedRowModel().rows.length < 2}
+            >
+              重複を削除
+              {dataGridTable.getSelectedRowModel().rows.length > 0 && (
+                <span className="ml-1.5 text-xs">
+                  ({dataGridTable.getSelectedRowModel().rows.length})
+                </span>
+              )}
+            </Button>
           </div>
         </div>
 
@@ -692,6 +756,23 @@ export default function DiceTableView({
         {/* Keyboard Shortcuts Dialog */}
         <DataGridKeyboardShortcuts enableSearch={!!dataGridProps.searchState} />
       </div>
+
+      {/* Deduplication Modal */}
+      {isDeduplicationOpen && (
+        <DeduplicationModal
+          open={isDeduplicationOpen}
+          onOpenChange={(open) => {
+            setIsDeduplicationOpen(open);
+            // Clear stored records when modal closes
+            if (!open) {
+              setRecordsForDeduplication([]);
+            }
+          }}
+          columns={columns}
+          records={recordsForDeduplication as any}
+          onConfirm={handleDeduplicationConfirm}
+        />
+      )}
     </>
   );
 }
