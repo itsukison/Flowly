@@ -10,13 +10,14 @@ import {
   Database,
   Columns,
   Settings,
+  User,
 } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useEffect, useState } from "react";
 
 const dashboardNavigation = [
+  { name: "プロフィール", href: "/dashboard/settings", icon: User },
   { name: "ダッシュボード", href: "/dashboard", icon: Home },
-  { name: "設定", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function DashboardSidebar() {
@@ -109,7 +110,7 @@ export default function DashboardSidebar() {
       <aside
         className={`
           hidden md:fixed md:inset-y-0 md:flex md:flex-col md:pt-16
-          transition-all duration-500 ease-[cubic-bezier(0.4,0.0,0.2,1)]
+          transition-all duration-300 ease-in-out
           ${isCollapsed ? "md:w-16" : "md:w-64"}
         `}
       >
@@ -117,14 +118,14 @@ export default function DashboardSidebar() {
           {/* Toggle Button */}
           <div
             className={`
-              px-4 py-2 transition-all duration-300 delay-100
+              px-4 py-2 transition-all duration-300
               ${isCollapsed ? "flex justify-center" : "flex justify-end"}
             `}
           >
             <button
               onClick={toggleCollapse}
               className={`
-                hover:bg-[#F4F4F5] rounded-lg transition-all duration-300 transform hover:scale-105
+                hover:bg-[#F4F4F5] rounded-lg transition-all duration-200 transform hover:scale-105
                 ${isCollapsed ? "w-9 h-9 flex items-center justify-center" : "p-2"}
               `}
               title={
@@ -132,7 +133,7 @@ export default function DashboardSidebar() {
               }
             >
               <ChevronRight
-                className={`w-5 h-5 text-[#71717B] transition-all duration-300 ${
+                className={`w-5 h-5 text-[#71717B] transition-transform duration-200 ${
                   isCollapsed ? "rotate-0" : "rotate-180"
                 }`}
               />
@@ -141,7 +142,7 @@ export default function DashboardSidebar() {
 
           {/* Dashboard Navigation */}
           <nav className="px-4 pt-2 pb-4 space-y-2">
-            {dashboardNavigation.map((item, index) => {
+            {dashboardNavigation.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
 
@@ -151,8 +152,7 @@ export default function DashboardSidebar() {
                   href={item.href}
                   className={`
                     flex items-center rounded-xl text-base font-medium
-                    transition-all duration-300 hover:scale-[1.02]
-                    transform hover:translate-x-1
+                    transition-all duration-200 hover:scale-[1.02]
                     ${
                       isActive
                         ? "bg-[#09090B] text-white"
@@ -162,23 +162,11 @@ export default function DashboardSidebar() {
                       isCollapsed ? "w-9 h-9 justify-center" : "gap-3 px-4 py-3"
                     }
                   `}
-                  style={{
-                    transitionDelay: `${index * 50}ms`,
-                    transitionProperty: 'all',
-                    transitionDuration: '300ms'
-                  }}
                   title={isCollapsed ? item.name : undefined}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200" />
                   {!isCollapsed && (
-                    <span
-                      className="whitespace-nowrap overflow-hidden transition-all duration-300"
-                      style={{
-                        transitionDelay: `${index * 50 + 100}ms`,
-                        opacity: 1,
-                        transform: 'translateX(0)'
-                      }}
-                    >
+                    <span className="whitespace-nowrap overflow-hidden">
                       {item.name}
                     </span>
                   )}
@@ -190,26 +178,9 @@ export default function DashboardSidebar() {
           {/* Separator */}
           <div className="border-t border-[#E4E4E7]" />
 
-          {/* Table Context Header */}
-          <div
-            className={`
-              px-4 pt-4 pb-2 transition-all duration-300 delay-200
-              ${isCollapsed ? "opacity-0 overflow-hidden" : "opacity-100"}
-            `}
-          >
-            <div className="text-xs font-semibold text-[#71717B] mb-2">
-              テーブル
-            </div>
-            <div className={`text-sm font-bold truncate transition-all duration-300 ${
-              tableContext ? "text-[#09090B]" : "text-[#A1A1AA]"
-            }`}>
-              {tableContext ? tableContext.tableName : "テーブルを選択"}
-            </div>
-          </div>
-
           {/* Table Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-2">
-            {tableNavigation.map((item, index) => {
+            {tableNavigation.map((item) => {
               const isActive = pathname === item.href && !isTableNavigationDisabled;
               const Icon = item.icon;
 
@@ -220,24 +191,16 @@ export default function DashboardSidebar() {
                     key={item.name}
                     className={`
                       flex items-center rounded-xl text-base font-medium cursor-not-allowed
-                      text-[#A1A1AA] transition-all duration-300
+                      text-[#A1A1AA] transition-all duration-200
                       ${
                         isCollapsed ? "w-9 h-9 justify-center" : "gap-3 px-4 py-3"
                       }
                     `}
-                    style={{
-                      transitionDelay: `${index * 50 + 200}ms`,
-                    }}
                     title={isCollapsed ? item.name : "テーブルを選択してください"}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0 opacity-40 transition-transform duration-200" />
                     {!isCollapsed && (
-                      <span
-                        className="whitespace-nowrap overflow-hidden opacity-40 transition-all duration-300"
-                        style={{
-                          transitionDelay: `${index * 50 + 300}ms`,
-                        }}
-                      >
+                      <span className="whitespace-nowrap overflow-hidden opacity-40">
                         {item.name}
                       </span>
                     )}
@@ -252,8 +215,7 @@ export default function DashboardSidebar() {
                   href={item.href}
                   className={`
                     flex items-center rounded-xl text-base font-medium
-                    transition-all duration-300 hover:scale-[1.02]
-                    transform hover:translate-x-1
+                    transition-all duration-200 hover:scale-[1.02]
                     ${
                       isActive
                         ? "bg-[#09090B] text-white"
@@ -263,23 +225,11 @@ export default function DashboardSidebar() {
                       isCollapsed ? "w-9 h-9 justify-center" : "gap-3 px-4 py-3"
                     }
                   `}
-                  style={{
-                    transitionDelay: `${index * 50 + 200}ms`,
-                    transitionProperty: 'all',
-                    transitionDuration: '300ms'
-                  }}
                   title={isCollapsed ? item.name : undefined}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200" />
                   {!isCollapsed && (
-                    <span
-                      className="whitespace-nowrap overflow-hidden transition-all duration-300"
-                      style={{
-                        transitionDelay: `${index * 50 + 300}ms`,
-                        opacity: 1,
-                        transform: 'translateX(0)'
-                      }}
-                    >
+                    <span className="whitespace-nowrap overflow-hidden">
                       {item.name}
                     </span>
                   )}
@@ -291,10 +241,10 @@ export default function DashboardSidebar() {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E4E4E7] z-50 transition-all duration-300">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E4E4E7] z-50 transition-all duration-200">
         <div className="grid grid-cols-5 items-center h-16">
           {/* Dashboard Link */}
-          {dashboardNavigation.map((item, index) => {
+          {dashboardNavigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
 
@@ -304,15 +254,12 @@ export default function DashboardSidebar() {
                 href={item.href}
                 className={`
                   flex flex-col items-center justify-center gap-1 px-2 py-2
-                  transition-all duration-300 hover:scale-110
+                  transition-all duration-200 hover:scale-110
                   ${isActive ? "text-[#09090B]" : "text-[#71717B]"}
                 `}
-                style={{
-                  transitionDelay: `${index * 30}ms`,
-                }}
               >
                 <Icon className="w-5 h-5 transition-transform duration-200" />
-                <span className="text-xs font-medium truncate max-w-full transition-all duration-200">
+                <span className="text-xs font-medium truncate max-w-full">
                   {item.name}
                 </span>
               </Link>
@@ -320,7 +267,7 @@ export default function DashboardSidebar() {
           })}
 
           {/* Table Navigation */}
-          {tableNavigation.map((item, index) => {
+          {tableNavigation.map((item) => {
             const isActive = pathname === item.href && !isTableNavigationDisabled;
             const Icon = item.icon;
 
@@ -328,13 +275,10 @@ export default function DashboardSidebar() {
               return (
                 <div
                   key={item.name}
-                  className="flex flex-col items-center justify-center gap-1 px-2 py-2 text-[#A1A1AA] cursor-not-allowed transition-all duration-300"
-                  style={{
-                    transitionDelay: `${index * 30 + 60}ms`,
-                  }}
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2 text-[#A1A1AA] cursor-not-allowed transition-all duration-200"
                 >
                   <Icon className="w-5 h-5 opacity-40 transition-transform duration-200" />
-                  <span className="text-xs font-medium opacity-40 truncate max-w-full transition-all duration-200">
+                  <span className="text-xs font-medium opacity-40 truncate max-w-full">
                     {item.name}
                   </span>
                 </div>
@@ -347,15 +291,12 @@ export default function DashboardSidebar() {
                 href={item.href}
                 className={`
                   flex flex-col items-center justify-center gap-1 px-2 py-2
-                  transition-all duration-300 hover:scale-110
+                  transition-all duration-200 hover:scale-110
                   ${isActive ? "text-[#09090B]" : "text-[#71717B]"}
                 `}
-                style={{
-                  transitionDelay: `${index * 30 + 60}ms`,
-                }}
               >
                 <Icon className="w-5 h-5 transition-transform duration-200" />
-                <span className="text-xs font-medium truncate max-w-full transition-all duration-200">
+                <span className="text-xs font-medium truncate max-w-full">
                   {item.name}
                 </span>
               </Link>
