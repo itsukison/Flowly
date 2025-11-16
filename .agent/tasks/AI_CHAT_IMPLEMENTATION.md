@@ -50,7 +50,6 @@ Add an AI-powered chat interface to the data table view (`/dashboard/tables/[tab
 - Already has enrichment and deduplication features
 
 **Available APIs**:
-- Gemini API: `AIzaSyCUTSWsXX56mHiFw-Lh_O7fu1YabhJE6F8`
 - Supabase: Full access with service role key
 - Supabase MCP: Available for database operations
 
