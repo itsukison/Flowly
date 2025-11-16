@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
@@ -153,18 +153,30 @@ export default function DiceTableView({
 
     const handleSidebarToggle = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if click is on the collapse button (ChevronLeft icon or its parent button)
-      const button = target.closest('button[title*="折りたたむ"]');
-      if (button) {
+      // Look for collapse button with Japanese title in both desktop and mobile sidebars
+      const collapseButton = target.closest('button[title*="折りたたむ"], [data-sidebar-close]');
+      if (collapseButton) {
         e.preventDefault();
         e.stopPropagation();
         setIsSidebarOpen(false);
       }
     };
 
-    // Use capture phase to intercept before the sidebar's own handler
-    document.addEventListener("click", handleSidebarToggle, true);
-    return () => document.removeEventListener("click", handleSidebarToggle, true);
+    // Add listener to both the desktop sidebar and mobile sidebar container
+    const desktopSidebar = document.querySelector('aside');
+    const mobileSidebar = document.querySelector('.fixed.top-16.bottom-0.left-0');
+
+    const elements = [desktopSidebar, mobileSidebar].filter(Boolean);
+
+    elements.forEach(element => {
+      element?.addEventListener("click", handleSidebarToggle, true);
+    });
+
+    return () => {
+      elements.forEach(element => {
+        element?.removeEventListener("click", handleSidebarToggle, true);
+      });
+    };
   }, [isSidebarOpen]);
 
   // Helper function to check if a row is empty
@@ -621,6 +633,19 @@ export default function DiceTableView({
 
           {/* Sidebar - positioned below header (top-16 = 64px header height) */}
           <div className="fixed top-16 bottom-0 left-0 z-50 w-64 bg-white border-r border-[#E4E4E7] shadow-xl">
+            {/* Mobile Sidebar Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[#E4E4E7] md:hidden">
+              <h2 className="text-lg font-semibold">メニュー</h2>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                data-sidebar-close="true"
+                className="p-2 hover:bg-[#F4F4F5] rounded-lg transition-colors"
+                title="サイドバーを閉じる"
+              >
+                <X className="w-5 h-5 text-[#71717B]" />
+              </button>
+            </div>
+
             {/* Sidebar content */}
             <div className="overflow-y-auto h-full">
               <DashboardSidebar />

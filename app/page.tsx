@@ -1,16 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Slideshow from '../components/Slideshow';
 import Ticker from '../components/Ticker';
 import Noise from '../components/Noise';
 import Header from '../components/Header';
 import { useLanguage } from '../contexts/LanguageContext';
+import { createClient } from '../lib/supabase/client';
 
 export default function Home() {
   const { t } = useLanguage();
   const [activeStep, setActiveStep] = useState(1);
+  const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // User is authenticated, redirect to dashboard
+          router.push('/dashboard');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-white">
