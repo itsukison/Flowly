@@ -72,36 +72,36 @@ export default function Home() {
       </section>
 
       {/* Highlights Section */}
-      <section className="bg-[#FAFAFA] px-6 md:px-20 lg:px-32 xl:px-48 py-20 min-h-screen flex items-center">
+      <section className="bg-[#FAFAFA] px-6 md:px-20 lg:px-32 xl:px-48 py-12 min-h-screen flex items-center">
         <div className="max-w-[1400px] mx-auto w-full">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
               {t('highlightsBadge')}
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.25] mb-4 px-4">
+            <h2 className="text-3xl md:text-4xl lg:text-[48px] font-medium leading-[1.25] mb-4 px-4">
               {t('highlightsTitle')}
             </h2>
-            <p className="text-lg text-[#71717B] max-w-[700px] mx-auto px-4">
+            <p className="text-base text-[#71717B] max-w-[700px] mx-auto px-4">
               {t('highlightsSubtitle')}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-[#E4E4E7] rounded-3xl p-6">
-              <div className="w-full h-[280px] bg-gradient-to-br from-[#f093fb] to-[#f5576c] rounded-2xl mb-4"></div>
+            <div className="bg-white border border-[#E4E4E7] rounded-3xl p-4">
+              <div className="w-full h-[200px] bg-gradient-to-br from-[#f093fb] to-[#f5576c] rounded-2xl mb-4"></div>
               <h3 className="text-2xl font-medium mb-2">{t('highlightsCard1Title')}</h3>
               <p className="text-[#71717B] text-base">
                 {t('highlightsCard1Desc')}
               </p>
             </div>
-            <div className="bg-white border border-[#E4E4E7] rounded-3xl p-6">
-              <div className="w-full h-[280px] bg-gradient-to-br from-[#4facfe] to-[#00f2fe] rounded-2xl mb-4"></div>
+            <div className="bg-white border border-[#E4E4E7] rounded-3xl p-4">
+              <div className="w-full h-[200px] bg-gradient-to-br from-[#4facfe] to-[#00f2fe] rounded-2xl mb-4"></div>
               <h3 className="text-2xl font-medium mb-2">{t('highlightsCard2Title')}</h3>
               <p className="text-[#71717B] text-base">
                 {t('highlightsCard2Desc')}
               </p>
             </div>
-            <div className="bg-white border border-[#E4E4E7] rounded-3xl p-6">
-              <div className="w-full h-[280px] bg-gradient-to-br from-[#fa709a] to-[#fee140] rounded-2xl mb-4"></div>
+            <div className="bg-white border border-[#E4E4E7] rounded-3xl p-4">
+              <div className="w-full h-[200px] bg-gradient-to-br from-[#fa709a] to-[#fee140] rounded-2xl mb-4"></div>
               <h3 className="text-2xl font-medium mb-2">{t('highlightsCard3Title')}</h3>
               <p className="text-[#71717B] text-base">
                 {t('highlightsCard3Desc')}
@@ -112,16 +112,16 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-20 min-h-screen flex items-center">
+      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-12 min-h-screen flex items-center">
         <div className="max-w-[1400px] mx-auto w-full">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
               {t('howItWorksBadge')}
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.25] mb-4 px-4">
+            <h2 className="text-3xl md:text-4xl lg:text-[48px] font-medium leading-[1.25] mb-4 px-4">
               {t('howItWorksTitle')}
             </h2>
-            <p className="text-lg text-[#71717B] max-w-[700px] mx-auto px-4">
+            <p className="text-base text-[#71717B] max-w-[700px] mx-auto px-4">
               {t('howItWorksSubtitle')}
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function Home() {
             <div className="flex-1 flex flex-col gap-2">
               <button
                 onClick={() => setActiveStep(1)}
-                className={`bg-white border rounded-2xl p-6 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
+                className={`bg-white border rounded-2xl p-4 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
                   activeStep === 1 ? 'opacity-100 border-[#09090B]' : 'opacity-60 border-[#E4E4E7]'
                 }`}
               >
@@ -143,7 +143,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveStep(2)}
-                className={`bg-white border rounded-2xl p-6 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
+                className={`bg-white border rounded-2xl p-4 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
                   activeStep === 2 ? 'opacity-100 border-[#09090B]' : 'opacity-60 border-[#E4E4E7]'
                 }`}
               >
@@ -157,7 +157,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveStep(3)}
-                className={`bg-white border rounded-2xl p-6 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
+                className={`bg-white border rounded-2xl p-4 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
                   activeStep === 3 ? 'opacity-100 border-[#09090B]' : 'opacity-60 border-[#E4E4E7]'
                 }`}
               >
@@ -171,7 +171,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveStep(4)}
-                className={`bg-white border rounded-2xl p-6 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
+                className={`bg-white border rounded-2xl p-4 text-left transition-all duration-300 cursor-pointer hover:border-[#09090B] ${
                   activeStep === 4 ? 'opacity-100 border-[#09090B]' : 'opacity-60 border-[#E4E4E7]'
                 }`}
               >
@@ -199,36 +199,36 @@ export default function Home() {
               </button>
             </div>
             <div className="flex-1">
-              <div className="w-full h-full min-h-[520px] bg-gradient-to-br from-[#4facfe] to-[#00f2fe] rounded-3xl"></div>
+              <div className="w-full h-full min-h-[400px] bg-gradient-to-br from-[#4facfe] to-[#00f2fe] rounded-3xl"></div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Detailed Section */}
-      <section className="bg-[#FAFAFA] px-6 md:px-20 lg:px-32 xl:px-48 py-20 min-h-screen flex items-center">
+      <section className="bg-[#FAFAFA] px-6 md:px-20 lg:px-32 xl:px-48 py-12 min-h-screen flex items-center">
         <div className="max-w-[1400px] mx-auto w-full">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
               {t('featuresBadge')}
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.25] mb-4 px-4">
+            <h2 className="text-3xl md:text-4xl lg:text-[48px] font-medium leading-[1.25] mb-4 px-4">
               {t('featuresTitle')}
             </h2>
-            <p className="text-lg text-[#71717B] max-w-[700px] mx-auto px-4">
+            <p className="text-base text-[#71717B] max-w-[700px] mx-auto px-4">
               {t('featuresSubtitle')}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white border border-[#E4E4E7] rounded-2xl p-4">
-              <div className="w-full h-[324px] bg-gradient-to-br from-[#fa709a] to-[#fee140] rounded-2xl mb-4"></div>
+              <div className="w-full h-[240px] bg-gradient-to-br from-[#fa709a] to-[#fee140] rounded-2xl mb-4"></div>
               <h3 className="text-2xl font-medium text-[#27272A] mb-2 px-5">{t('feature1Title')}</h3>
               <p className="text-[#71717B] text-base px-5 pb-5">
                 {t('feature1Desc')}
               </p>
             </div>
             <div className="bg-white border border-[#E4E4E7] rounded-2xl p-4">
-              <div className="w-full h-[324px] bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-2xl mb-4"></div>
+              <div className="w-full h-[240px] bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-2xl mb-4"></div>
               <h3 className="text-2xl font-medium text-[#27272A] mb-2 px-5">{t('feature2Title')}</h3>
               <p className="text-[#71717B] text-base px-5 pb-5">
                 {t('feature2Desc')}
@@ -239,35 +239,35 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="bg-[#FAFAFA] px-6 md:px-20 lg:px-32 xl:px-48 py-20">
+      <section className="bg-[#FAFAFA] px-6 md:px-20 lg:px-32 xl:px-48 py-16">
         <div className="max-w-[1400px] mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
               {t('testimonialsBadge')}
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium leading-[1.25] mb-4 px-4">{t('testimonialsTitle')}</h2>
-            <p className="text-lg text-[#71717B] max-w-[700px] mx-auto px-4">
+            <h2 className="text-3xl md:text-4xl lg:text-[48px] font-medium leading-[1.25] mb-4 px-4">{t('testimonialsTitle')}</h2>
+            <p className="text-base text-[#71717B] max-w-[700px] mx-auto px-4">
               {t('testimonialsSubtitle')}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-6 auto-rows-[minmax(200px,auto)] gap-6">
             {/* Large testimonial card */}
-            <div className="col-span-1 md:col-span-3 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col justify-between">
+            <div className="col-span-1 md:col-span-3 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col justify-between">
               <p className="text-base leading-[1.5] text-[#09090B] mb-6">
                 "{t('testimonial1')}"
               </p>
               <div className="flex items-center gap-3 mt-auto">
-                <Image src="/avatar1-7324be.png" alt="Marc Manara" width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
+                <Image src="/avatar1-7324be.png" alt={t('testimonial1Name')} width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
                 <div className="flex flex-col gap-1">
-                  <div className="font-bold text-base text-[#09090B]">Marc Manara</div>
-                  <div className="text-base text-[#71717B]">OpenAI</div>
+                  <div className="font-bold text-base text-[#09090B]">{t('testimonial1Name')}</div>
+                  <div className="text-base text-[#71717B]">{t('testimonial1Company')}</div>
                 </div>
               </div>
             </div>
 
             {/* Stat card 1 */}
-            <div className="col-span-1 md:col-span-3 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col gap-4">
-              <div className="w-full h-[168px] bg-gradient-to-br from-[#f093fb] to-[#f5576c] rounded-xl"></div>
+            <div className="col-span-1 md:col-span-3 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col gap-4">
+              <div className="w-full h-[140px] bg-gradient-to-br from-[#f093fb] to-[#f5576c] rounded-xl"></div>
               <div className="flex flex-col gap-2">
                 <div className="text-[32px] font-medium text-[#09090B]">{t('stat1Number')}</div>
                 <div className="text-base text-[#71717B] leading-[1.5]">{t('stat1Text')}</div>
@@ -275,36 +275,36 @@ export default function Home() {
             </div>
 
             {/* Medium testimonial card */}
-            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col justify-between">
+            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col justify-between">
               <p className="text-base leading-[1.5] text-[#09090B] mb-6">
                 "{t('testimonial2')}"
               </p>
               <div className="flex items-center gap-3 mt-auto">
-                <Image src="/avatar2-7324be.png" alt="Logan Kilpatrick" width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
+                <Image src="/avatar2-7324be.png" alt={t('testimonial2Name')} width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
                 <div className="flex flex-col gap-1">
-                  <div className="font-bold text-base text-[#09090B]">Logan Kilpatrick</div>
-                  <div className="text-base text-[#71717B]">Google</div>
+                  <div className="font-bold text-base text-[#09090B]">{t('testimonial2Name')}</div>
+                  <div className="text-base text-[#71717B]">{t('testimonial2Company')}</div>
                 </div>
               </div>
             </div>
 
             {/* Medium testimonial card 2 */}
-            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col justify-between">
+            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col justify-between">
               <p className="text-base leading-[1.5] text-[#09090B] mb-6">
                 "{t('testimonial3')}"
               </p>
               <div className="flex items-center gap-3 mt-auto">
-                <Image src="/avatar3-4171bf.png" alt="Greg Kogan" width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
+                <Image src="/avatar3-4171bf.png" alt={t('testimonial3Name')} width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
                 <div className="flex flex-col gap-1">
-                  <div className="font-bold text-base text-[#09090B]">Greg Kogan</div>
-                  <div className="text-base text-[#71717B]">Pinecone</div>
+                  <div className="font-bold text-base text-[#09090B]">{t('testimonial3Name')}</div>
+                  <div className="text-base text-[#71717B]">{t('testimonial3Company')}</div>
                 </div>
               </div>
             </div>
 
             {/* Stat card 2 */}
-            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col gap-4">
-              <div className="w-full h-[168px] bg-gradient-to-br from-[#4facfe] to-[#00f2fe] rounded-xl"></div>
+            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col gap-4">
+              <div className="w-full h-[140px] bg-gradient-to-br from-[#4facfe] to-[#00f2fe] rounded-xl"></div>
               <div className="flex flex-col gap-2">
                 <div className="text-[32px] font-medium text-[#09090B]">{t('stat2Number')}</div>
                 <div className="text-base text-[#71717B] leading-[1.5]">{t('stat2Text')}</div>
@@ -312,21 +312,21 @@ export default function Home() {
             </div>
 
             {/* Large testimonial card 2 */}
-            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col justify-between">
+            <div className="col-span-1 md:col-span-2 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col justify-between">
               <p className="text-base leading-[1.5] text-[#09090B] mb-6">
                 "{t('testimonial4')}"
               </p>
               <div className="flex items-center gap-3 mt-auto">
-                <Image src="/avatar4-7324be.png" alt="Martin Terskin" width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
+                <Image src="/avatar4-7324be.png" alt={t('testimonial4Name')} width={48} height={48} className="w-12 h-12 rounded-full flex-shrink-0" />
                 <div className="flex flex-col gap-1">
-                  <div className="font-bold text-base text-[#09090B]">Martin Terskin</div>
-                  <div className="text-base text-[#71717B]">OfferMarket</div>
+                  <div className="font-bold text-base text-[#09090B]">{t('testimonial4Name')}</div>
+                  <div className="text-base text-[#71717B]">{t('testimonial4Company')}</div>
                 </div>
               </div>
             </div>
 
             {/* New testimonial card - fills third row */}
-            <div className="col-span-1 md:col-span-4 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-8 flex flex-col justify-between">
+            <div className="col-span-1 md:col-span-4 row-span-1 bg-white border border-[#E4E4E7] rounded-2xl p-6 flex flex-col justify-between">
               <p className="text-base leading-[1.5] text-[#09090B] mb-6">
                 "{t('testimonial5')}"
               </p>
@@ -343,26 +343,26 @@ export default function Home() {
       </section>
 
       {/* Intro Section */}
-      <section className="bg-[#09090B] px-6 md:px-20 lg:px-32 xl:px-48 py-20 relative overflow-hidden">
+      <section className="bg-[#09090B] px-6 md:px-20 lg:px-32 xl:px-48 py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-[#1a1a1a] to-black opacity-50"></div>
         <div className="max-w-[940px] mx-auto relative z-10">
           {/* Heading */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <span className="inline-block px-[17px] py-[7px] border border-white/70 rounded-full font-medium text-base mb-4 bg-black/40 text-white/90">
               {t('introBadge')}
             </span>
           </div>
           
           {/* Main Text with Scattered Tags */}
-          <div className="relative min-h-[500px] flex items-center justify-center py-12">
+          <div className="relative min-h-[400px] flex items-center justify-center py-8">
             <h2 className="text-center text-3xl md:text-4xl lg:text-5xl -mt-15 leading-[1.3] text-white/80 max-w-[550px] mx-auto relative z-10">
               {t('introText')}
             </h2>
             
             {/* Service Tags - Scattered and Pointing Inward */}
             {/* Strategy - Right Side (pointing left/inward) */}
-            <div className="absolute top-[35%] right-0 transform -rotate-6 hidden lg:block">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+            <div className="absolute top-[35%] -right-5 transform -rotate-6 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#FFD500] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introStrategy')}</span>
               </div>
@@ -370,7 +370,7 @@ export default function Home() {
             
             {/* UI/UX - Left Side (pointing right/inward) */}
             <div className="absolute top-[45%] left-0 -translate-y-1/2 transform rotate-5 hidden lg:block">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#474747] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introUIUX')}</span>
               </div>
@@ -378,15 +378,15 @@ export default function Home() {
             
             {/* Prototyping - Right Side (pointing left/inward) */}
             <div className="absolute top-[55%] right-0 transform rotate-8 hidden lg:block">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#FF45AB] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introPrototyping')}</span>
               </div>
             </div>
             
             {/* Animation - Top Right (pointing down-left/inward) */}
-            <div className="absolute top-[15%] right-[2%] transform -rotate-12 hidden lg:block">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+            <div className="absolute top-[10%] -right-5 transform -rotate-12 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#52FF69] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introAnimation')}</span>
               </div>
@@ -394,15 +394,15 @@ export default function Home() {
             
             {/* Research - Left Bottom (pointing up-right/inward) */}
             <div className="absolute bottom-[23%] left-0 transform -rotate-8 hidden lg:block">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#05A9FF] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introResearch')}</span>
               </div>
             </div>
             
             {/* Design Systems - Left Top (pointing down-right/inward) */}
-            <div className="absolute top-[20%] -left-10 transform rotate-12 hidden lg:block">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+            <div className="absolute top-[10%] -left-10 transform rotate-12 hidden lg:block">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#FF5E00] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introDesignSystems')}</span>
               </div>
@@ -410,27 +410,27 @@ export default function Home() {
             
             {/* Mobile/Tablet View - Below Text */}
             <div className="flex flex-wrap justify-center gap-4 mt-12 lg:hidden">
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#FFD500] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introStrategy')}</span>
               </div>
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#474747] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introUIUX')}</span>
               </div>
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#FF45AB] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introPrototyping')}</span>
               </div>
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#52FF69] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introAnimation')}</span>
               </div>
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#05A9FF] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introResearch')}</span>
               </div>
-              <div className="bg-white rounded-full px-5 py-3 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
+              <div className="bg-white rounded-full px-5 py-2 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.3),0px_0px_0px_8px_rgba(255,255,255,0.15)] flex items-center gap-2">
                 <div className="w-[34px] h-[34px] bg-[#FF5E00] rounded-full"></div>
                 <span className="text-sm text-[#09090B]">{t('introDesignSystems')}</span>
               </div>
@@ -440,7 +440,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-12 relative overflow-hidden">
+      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-12 mt-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-100 to-white opacity-60"></div>
         <div className="max-w-[1400px] mx-auto relative z-10">
           {/* Heading */}
@@ -448,14 +448,14 @@ export default function Home() {
             <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
               {t('pricingBadge')}
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.25]">
+            <h2 className="text-3xl md:text-4xl lg:text-[48px] font-normal leading-[1.25]">
               {t('pricingTitle')}
             </h2>
           </div>
 
           {/* Pricing Card */}
           <div className="max-w-[800px] mx-auto">
-            <div className="bg-white/50 backdrop-blur-sm rounded-3xl p-10 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)]">
+            <div className="bg-white/50 backdrop-blur-sm rounded-3xl p-8 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)]">
               <div className="flex flex-col gap-8">
                 {/* Top Section */}
                 <div>
@@ -491,7 +491,7 @@ export default function Home() {
                 </div>
 
                 {/* Features Section */}
-                <div className="bg-white/75 backdrop-blur-sm rounded-xl p-8">
+                <div className="bg-white/75 backdrop-blur-sm rounded-xl p-6">
                   <h3 className="text-lg font-bold mb-4">{t('pricingWhatsIncluded')}</h3>
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
@@ -591,14 +591,14 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-20">
+      <section className="bg-white px-6 md:px-20 lg:px-32 xl:px-48 py-16">
         <div className="max-w-[1400px] mx-auto">
           {/* Heading */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <span className="inline-block px-[17px] py-[7px] border border-[#E4E4E7] rounded-full font-medium text-base mb-4 bg-white">
               {t('faqBadge')}
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.25]">
+            <h2 className="text-3xl md:text-4xl lg:text-[48px] font-normal leading-[1.25]">
               {t('faqTitle')}
             </h2>
           </div>
@@ -607,9 +607,9 @@ export default function Home() {
             {/* FAQ Questions */}
             <div className="space-y-0">
               {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-                <div key={num} className="border-b border-black/25 py-9">
+                <div key={num} className="border-b border-black/25 py-6">
                   <div className="flex items-center justify-between cursor-pointer">
-                    <h3 className="text-2xl font-normal">{t(`faqQuestion${num}` as any)}</h3>
+                    <h3 className="text-xl font-normal">{t(`faqQuestion${num}` as any)}</h3>
                     <div className="w-9 h-9 flex items-center justify-center">
                       <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
                         <path d="M18 12V24M12 18H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -622,7 +622,7 @@ export default function Home() {
 
             {/* Contact Card - Sticky */}
             <div className="lg:w-[600px]">
-              <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-10 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)] lg:sticky lg:top-24">
+              <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)] lg:sticky lg:top-24">
                 <div className="flex items-center gap-6 mb-8">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 shadow-[12px_16px_16px_0px_rgba(0,0,0,0.1),0px_0px_0px_8px_rgba(255,255,255,0.25)]"></div>
                   <div>
@@ -652,7 +652,10 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto">
           <div className="flex flex-col md:flex-row justify-between gap-10">
             <div className="flex flex-col gap-4">
-              <div className="text-xl font-semibold">{t('brandName')}</div>
+              <div className="flex items-center gap-1 text-xl font-semibold">
+                <img src="/logo.png" alt="Flowly" className="w-8 h-8" />
+                <span className="boldonse-regular">{t('brandName')}</span>
+              </div>
               <p className="text-[#A1A1AA] font-medium">{t('copyright')}</p>
             </div>
             <div className="flex flex-col md:flex-row gap-8 md:gap-32">

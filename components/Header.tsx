@@ -43,8 +43,9 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 bg-white/65 backdrop-blur-[10px] z-[1000] px-6 md:px-20 lg:px-32 xl:px-48">
       <nav className="flex justify-between items-center py-4 px-6 max-w-[1400px] mx-auto">
-        <Link href="/" className="font-bold text-xl no-underline text-[#09090B]">
-          {t('brandName')}
+        <Link href="/" className="flex items-center gap-1 font-bold text-xl no-underline text-[#09090B]">
+          <img src="/logo.png" alt="Flowly" className="w-8 h-8" />
+          <span className="boldonse-regular">{t('brandName')}</span>
         </Link>
         <div className="hidden md:flex gap-14 items-center">
           <a href="#pricing" className="text-base font-semibold text-[#09090B] no-underline hover:opacity-70 transition-opacity">

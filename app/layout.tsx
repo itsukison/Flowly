@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Flowly - AI Support Agents for Exceptional Customer Experiences",
   description: "Build the perfect customer-facing AI support agent with Flowly",
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({

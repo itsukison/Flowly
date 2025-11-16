@@ -26,7 +26,10 @@ export default function DashboardHeader({ user, userProfile }: DashboardHeaderPr
     <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-[10px] border-b border-[#E4E4E7] z-50">
       <div className="flex items-center justify-between h-16 px-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-[#09090B]">Flowly</h1>
+          <div className="flex items-center gap-1">
+            <img src="/logo.png" alt="Flowly" className="w-8 h-8" />
+            <h1 className="text-xl font-bold text-[#09090B] boldonse-regular">Flowly</h1>
+          </div>
           {userProfile?.organizations && (
             <span className="text-sm text-[#71717B] hidden md:inline">
               {userProfile.organizations.name}
