@@ -269,7 +269,7 @@ export default function AddRecordModal({
                 <label className="flex items-center gap-2 text-sm text-[#71717B] cursor-pointer">
                   <Checkbox
                     checked={deduplicate}
-                    onCheckedChange={setDeduplicate}
+                    onCheckedChange={(checked) => setDeduplicate(checked === true)}
                   />
                   <span>重複を検出して削除</span>
                 </label>

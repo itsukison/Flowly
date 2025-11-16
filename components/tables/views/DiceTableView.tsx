@@ -8,6 +8,7 @@ import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyb
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
+import { EnrichmentModal } from "@/components/tables/modals/EnrichmentModal";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -111,6 +112,9 @@ export default function DiceTableView({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDeduplicationOpen, setIsDeduplicationOpen] = useState(false);
   const [recordsForDeduplication, setRecordsForDeduplication] = useState<NormalizedTableRecord[]>([]);
+  const [isEnrichmentOpen, setIsEnrichmentOpen] = useState(false);
+  const [recordsForEnrichment, setRecordsForEnrichment] = useState<NormalizedTableRecord[]>([]);
+  const [enrichmentStatus, setEnrichmentStatus] = useState<'idle' | 'processing' | 'done'>('idle');
 
   // Set table context for sidebar
   useEffect(() => {
@@ -713,6 +717,64 @@ export default function DiceTableView({
               variant="outline"
               size="sm"
               onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // If processing or done, just reopen the modal
+                if (enrichmentStatus !== 'idle') {
+                  setIsEnrichmentOpen(true);
+                  return;
+                }
+                
+                const selectedRows = dataGridTable.getSelectedRowModel().rows;
+                
+                if (selectedRows.length === 0) {
+                  alert('エンリッチメントする行を選択してください');
+                  return;
+                }
+                
+                const records = selectedRows
+                  .map(row => row.original)
+                  .filter(record => !record.id.startsWith('temp-'));
+                
+                setRecordsForEnrichment(records);
+                setIsEnrichmentOpen(true);
+              }}
+              disabled={enrichmentStatus === 'idle' && dataGridTable.getSelectedRowModel().rows.length === 0}
+              className={enrichmentStatus === 'done' ? 'border-green-500 text-green-700' : ''}
+            >
+              {enrichmentStatus === 'processing' && (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  処理中...
+                </>
+              )}
+              {enrichmentStatus === 'done' && (
+                <>
+                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  完了
+                </>
+              )}
+              {enrichmentStatus === 'idle' && (
+                <>
+                  連絡先を取得
+                  {dataGridTable.getSelectedRowModel().rows.length > 0 && (
+                    <span className="ml-1.5 text-xs">
+                      ({dataGridTable.getSelectedRowModel().rows.length})
+                    </span>
+                  )}
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
                 // Prevent any default behavior and stop propagation
                 e.preventDefault();
                 e.stopPropagation();
@@ -756,6 +818,25 @@ export default function DiceTableView({
         {/* Keyboard Shortcuts Dialog */}
         <DataGridKeyboardShortcuts enableSearch={!!dataGridProps.searchState} />
       </div>
+
+      {/* Enrichment Modal */}
+      <EnrichmentModal
+        open={isEnrichmentOpen}
+        onOpenChange={(open) => {
+          setIsEnrichmentOpen(open);
+          if (!open && enrichmentStatus === 'idle') {
+            setRecordsForEnrichment([]);
+          }
+        }}
+        columns={columns}
+        records={recordsForEnrichment as any}
+        onComplete={() => {
+          router.refresh();
+        }}
+        onStatusChange={(status) => {
+          setEnrichmentStatus(status);
+        }}
+      />
 
       {/* Deduplication Modal */}
       {isDeduplicationOpen && (
