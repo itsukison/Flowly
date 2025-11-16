@@ -9,6 +9,7 @@ import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
 import { EnrichmentModal } from "@/components/tables/modals/EnrichmentModal";
+import { AIChatModal } from "@/components/tables/modals/AIChatModal";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -115,6 +116,7 @@ export default function DiceTableView({
   const [isEnrichmentOpen, setIsEnrichmentOpen] = useState(false);
   const [recordsForEnrichment, setRecordsForEnrichment] = useState<NormalizedTableRecord[]>([]);
   const [enrichmentStatus, setEnrichmentStatus] = useState<'idle' | 'processing' | 'done'>('idle');
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
 
   // Set table context for sidebar
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function DiceTableView({
   useEffect(() => {
     if (!isSidebarOpen) return;
 
-    const handleSidebarToggle = (e: MouseEvent) => {
+    const handleSidebarToggle = (e: Event) => {
       const target = e.target as HTMLElement;
       // Look for collapse button with Japanese title in both desktop and mobile sidebars
       const collapseButton = target.closest('button[title*="折りたたむ"], [data-sidebar-close]');
@@ -741,6 +743,17 @@ export default function DiceTableView({
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setIsAIChatOpen(true)}
+              className="gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              AIチャット
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -879,6 +892,15 @@ export default function DiceTableView({
           onConfirm={handleDeduplicationConfirm}
         />
       )}
+
+      {/* AI Chat Modal */}
+      <AIChatModal
+        open={isAIChatOpen}
+        onOpenChange={setIsAIChatOpen}
+        tableId={table.id}
+        tableName={table.name}
+        columns={columns}
+      />
     </>
   );
 }
