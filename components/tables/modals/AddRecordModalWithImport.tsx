@@ -1,28 +1,37 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Plus, Upload } from 'lucide-react'
+import { X, Plus, Upload, MessageSquare } from 'lucide-react'
 import AddRecordModal from './AddRecordModal'
 import DataImport from '@/components/import/core/DataImport'
+import { AIEnrichmentModal } from './AIEnrichmentModal'
 
 interface AddRecordModalWithImportProps {
   tableId: string
+  tableName: string
   columns: any[]
   statuses: any[]
   organizationId: string
   onClose: () => void
 }
 
-type Mode = 'select' | 'manual' | 'import'
+type Mode = 'select' | 'manual' | 'import' | 'ai-enrichment'
 
 export default function AddRecordModalWithImport({
   tableId,
+  tableName,
   columns,
   statuses,
   organizationId,
   onClose,
 }: AddRecordModalWithImportProps) {
   const [mode, setMode] = useState<Mode>('select')
+
+  const handleEnrichmentStart = async (sessionId: string, requirements: any) => {
+    // Modal will handle the generation and progress display
+    // Just keep the modal open and let it manage the process
+    console.log('Enrichment started with session:', sessionId, 'requirements:', requirements);
+  }
 
   if (mode === 'manual') {
     return (
@@ -68,6 +77,24 @@ export default function AddRecordModalWithImport({
     )
   }
 
+  if (mode === 'ai-enrichment') {
+    return (
+      <AIEnrichmentModal
+        open={true}
+        onOpenChange={(open) => !open && onClose()}
+        tableId={tableId}
+        tableName={tableName}
+        columns={columns.map(col => ({
+          id: col.id,
+          name: col.name,
+          label: col.label || col.name,
+          type: col.type || 'text',
+        }))}
+        onEnrichmentStart={handleEnrichmentStart}
+      />
+    )
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl">
@@ -90,18 +117,25 @@ export default function AddRecordModalWithImport({
 
           <div className="grid grid-cols-2 gap-6">
             <button
-              onClick={() => setMode('manual')}
+              onClick={() => setMode('ai-enrichment')}
               className="group border-2 border-[#E4E4E7] rounded-2xl p-10 hover:border-[#09090B] hover:bg-[#FAFAFA] transition-all"
             >
               <div className="w-20 h-20 rounded-2xl bg-[#F4F4F5] group-hover:bg-[#09090B] flex items-center justify-center mx-auto mb-6 transition-colors">
-                <Plus className="w-10 h-10 text-[#09090B] group-hover:text-white transition-colors" />
+                <MessageSquare className="w-10 h-10 text-[#09090B] group-hover:text-white transition-colors" />
               </div>
-              <h3 className="text-xl font-bold text-[#09090B] mb-3">
-                手動で追加
-              </h3>
-              <p className="text-sm text-[#71717B] leading-relaxed">
-                スプレッドシート形式で複数のレコードを入力
-              </p>
+              <div className="relative">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <h3 className="text-xl font-bold text-[#09090B]">
+                    AI データ生成
+                  </h3>
+                  <span className="px-2 py-1 text-xs bg-[#09090B] text-white rounded-full">
+                    新機能
+                  </span>
+                </div>
+                <p className="text-sm text-[#71717B] leading-relaxed text-center">
+                  AIと対話してビジネスデータを自動生成。企業情報、連絡先、財務データなどを簡単に作成
+                </p>
+              </div>
             </button>
 
             <button
@@ -117,6 +151,15 @@ export default function AddRecordModalWithImport({
               <p className="text-sm text-[#71717B] leading-relaxed">
                 Excel または CSV ファイルからインポート
               </p>
+            </button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-[#E4E4E7]">
+            <button
+              onClick={() => setMode('manual')}
+              className="w-full text-center text-sm text-[#71717B] hover:text-[#09090B] transition-colors py-2"
+            >
+              または手動でレコードを追加
             </button>
           </div>
         </div>

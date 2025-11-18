@@ -175,6 +175,7 @@ export default function TableMainView({
           />
           <AddRecordModalWithImport
             tableId={table.id}
+            tableName={table.name}
             columns={columns}
             statuses={statuses}
             organizationId={table.organization_id}
