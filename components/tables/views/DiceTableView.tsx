@@ -8,7 +8,7 @@ import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyb
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
-import { EnrichmentModal } from "@/components/tables/modals/EnrichmentModal";
+import { ContactEnrichmentModal } from "@/components/tables/modals/ContactEnrichmentModal";
 import { AIChatModal } from "@/components/tables/modals/AIChatModal";
 import { EditColumnModal } from "@/components/tables/modals/EditColumnModal";
 import { AddColumnModal } from "@/components/tables/modals/AddColumnModal";
@@ -959,22 +959,22 @@ export default function DiceTableView({
         <DataGridKeyboardShortcuts enableSearch={!!dataGridProps.searchState} />
       </div>
 
-      {/* Enrichment Modal */}
-      <EnrichmentModal
+      {/* Contact Enrichment Modal (New Gemini 3 Pro) */}
+      <ContactEnrichmentModal
         open={isEnrichmentOpen}
         onOpenChange={(open) => {
           setIsEnrichmentOpen(open);
-          if (!open && enrichmentStatus === 'idle') {
+          if (!open) {
             setRecordsForEnrichment([]);
+            setEnrichmentStatus('idle');
           }
         }}
+        tableId={table.id}
         columns={columns}
         records={recordsForEnrichment as any}
         onComplete={() => {
+          setEnrichmentStatus('done');
           router.refresh();
-        }}
-        onStatusChange={(status) => {
-          setEnrichmentStatus(status);
         }}
       />
 

@@ -1,3 +1,19 @@
+/**
+ * @deprecated This API endpoint is deprecated and will be removed in a future version.
+ * 
+ * Use /api/enrichment/enrich-contacts instead for better performance and features.
+ * 
+ * The new endpoint uses Gemini 3 Pro with Firecrawl fallback:
+ * - 57-81% cost reduction
+ * - 2-3x faster enrichment
+ * - Real-time progress tracking
+ * - Uses ALL row data for smarter enrichment
+ * - Job-based async processing
+ * 
+ * Migration: Replace calls to /api/enrich/contact with /api/enrichment/enrich-contacts
+ * See: .agent/tasks/CONTACT_ENRICHMENT_GEMINI3_REFACTOR_PLAN.md
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { enrichByUrl, enrichByCompanyName } from '@/lib/services/enrichmentService';

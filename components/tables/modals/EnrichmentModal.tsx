@@ -1,3 +1,19 @@
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * 
+ * Use ContactEnrichmentModal instead for better performance and UX.
+ * 
+ * The new system uses Gemini 3 Pro with Firecrawl fallback:
+ * - 57-81% cost reduction
+ * - 2-3x faster enrichment
+ * - Real-time progress updates
+ * - Uses ALL row data for smarter enrichment
+ * - Flexible column selection
+ * 
+ * Migration: Replace EnrichmentModal with ContactEnrichmentModal
+ * See: .agent/tasks/CONTACT_ENRICHMENT_GEMINI3_REFACTOR_PLAN.md
+ */
+
 "use client";
 
 import { useState, useMemo, useCallback } from "react";

@@ -1,4 +1,19 @@
 /**
+ * @deprecated This service is deprecated and will be removed in a future version.
+ * 
+ * Use Gemini3ContactEnrichmentAgent instead for better performance and features.
+ * 
+ * The new agent uses Gemini 3 Pro with Firecrawl fallback:
+ * - 57-81% cost reduction
+ * - 2-3x faster enrichment
+ * - Uses ALL row data for smarter enrichment
+ * - Confidence-based fallback strategy
+ * 
+ * Migration: Replace enrichmentService with Gemini3ContactEnrichmentAgent
+ * See: .agent/tasks/CONTACT_ENRICHMENT_GEMINI3_REFACTOR_PLAN.md
+ * 
+ * ---
+ * 
  * Enrichment service for finding contact information
  * Uses Firecrawl for web scraping and parsing utilities
  */
