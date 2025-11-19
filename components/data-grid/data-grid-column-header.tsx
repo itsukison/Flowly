@@ -14,6 +14,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   EyeOffIcon,
+  FilterIcon,
   HashIcon,
   ListChecksIcon,
   ListIcon,
@@ -133,6 +134,23 @@ export function DataGridColumnHeader<TData, TValue>({
     );
   }, [column.id, table]);
 
+  const onFilterSet = React.useCallback(() => {
+    table.setColumnFilters((prev) => {
+      // If filter already exists, focus on it
+      const exists = prev.some((f) => f.id === column.id);
+      if (exists) return prev;
+      
+      // Add new filter
+      return [...prev, { id: column.id, value: "" }];
+    });
+  }, [column.id, table]);
+
+  const onFilterRemove = React.useCallback(() => {
+    table.setColumnFilters((prev) =>
+      prev.filter((filter) => filter.id !== column.id)
+    );
+  }, [column.id, table]);
+
   const onLeftPin = React.useCallback(() => {
     column.pin("left");
   }, [column]);
@@ -171,7 +189,7 @@ export function DataGridColumnHeader<TData, TValue>({
   const canEditDelete = !isSpecialColumn && (onEditColumn || onDeleteColumn);
 
   // Drag and drop handlers
-  const canDrag = !column.getIsPinned() && onColumnReorder;
+  const canDrag = Boolean(!column.getIsPinned() && onColumnReorder);
 
   const handleDragStart = React.useCallback((e: React.DragEvent) => {
     if (!canDrag) return;
@@ -269,9 +287,31 @@ export function DataGridColumnHeader<TData, TValue>({
               )}
             </>
           )}
-          {column.getCanPin() && (
+          {column.getCanFilter() && (
             <>
               {column.getCanSort() && <DropdownMenuSeparator />}
+              {column.getIsFiltered() ? (
+                <DropdownMenuItem
+                  className="[&_svg]:text-muted-foreground"
+                  onClick={onFilterRemove}
+                >
+                  <XIcon />
+                  フィルタを解除
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  className="[&_svg]:text-muted-foreground"
+                  onClick={onFilterSet}
+                >
+                  <FilterIcon />
+                  フィルタを設定
+                </DropdownMenuItem>
+              )}
+            </>
+          )}
+          {column.getCanPin() && (
+            <>
+              {(column.getCanSort() || column.getCanFilter()) && <DropdownMenuSeparator />}
 
               {isPinnedLeft ? (
                 <DropdownMenuItem

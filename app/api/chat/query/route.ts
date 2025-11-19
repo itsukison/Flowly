@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     console.log("[API] Chat query endpoint hit");
-    const { tableId, message, conversationHistory } = await request.json();
-    console.log("[API] Request data:", { tableId, message });
+    const { tableId, message, conversationHistory, selectedRowIds, selectedRowSummary } = await request.json();
+    console.log("[API] Request data:", { tableId, message, selectedRowsCount: selectedRowIds?.length || 0 });
 
     if (!tableId || !message) {
       console.log("[API] Missing required fields");
@@ -84,6 +84,8 @@ export async function POST(request: NextRequest) {
       message,
       conversationHistory: conversationHistory || [],
       organizationId: userProfile.current_organization_id,
+      selectedRowIds,
+      selectedRowSummary,
     });
 
     console.log("[API] AI response:", response.type);

@@ -23,15 +23,19 @@ export async function executeFunctionCall(
 ): Promise<FunctionResult> {
   try {
     switch (functionName) {
+      case "sort_table": {
+        // Sort is handled on frontend, just return success
+        const { column, descending = true } = args;
+        return {
+          type: "text",
+          content: `テーブルを${column}カラムで${descending ? '降順' : '昇順'}にソートしました。`,
+        };
+      }
+
       case "query_records": {
-        const { status, company, email, limit = 50, orderBy } = args;
+        const { filters = {}, limit = 50, orderBy } = args;
         
-        // Build filters object from individual parameters
-        const filters: any = {};
-        if (status) filters.status = status;
-        if (company) filters.company = company;
-        if (email) filters.email = email;
-        
+        // filters is now a dynamic object with any column names as keys
         const result = await queryRecords(
           tableId,
           organizationId,

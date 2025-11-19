@@ -18,7 +18,7 @@ if (!GEMINI_API_KEY || !FIRECRAWL_API_KEY) {
 async function testContactEnrichment() {
   console.log('🧪 Testing Gemini3ContactEnrichmentAgent\n');
 
-  const agent = new Gemini3ContactEnrichmentAgent(GEMINI_API_KEY, FIRECRAWL_API_KEY);
+  const agent = new Gemini3ContactEnrichmentAgent(GEMINI_API_KEY!, FIRECRAWL_API_KEY!);
 
   // Test 1: Record with full context (company name + website)
   console.log('Test 1: Record with full context');
@@ -35,9 +35,9 @@ async function testContactEnrichment() {
   };
 
   const targetFields: EnrichmentField[] = [
-    { name: 'email', type: 'text', description: 'メールアドレス' },
-    { name: 'phone', type: 'text', description: '電話番号' },
-    { name: 'address', type: 'text', description: '住所' },
+    { name: 'email', displayName: 'Email', type: 'string', description: 'メールアドレス', required: false },
+    { name: 'phone', displayName: 'Phone', type: 'string', description: '電話番号', required: false },
+    { name: 'address', displayName: 'Address', type: 'string', description: '住所', required: false },
   ];
 
   const result1 = await agent.enrichRecord(

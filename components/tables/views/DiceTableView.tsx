@@ -6,11 +6,12 @@ import { Menu, X } from "lucide-react";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
+import { DataGridFilterMenu } from "@/components/data-grid/data-grid-filter-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import { useUndoRedo } from "@/hooks/use-undo-redo";
 import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
 import { ContactEnrichmentModal } from "@/components/tables/modals/ContactEnrichmentModal";
-import { AIChatModal } from "@/components/tables/modals/AIChatModal";
+import { AIChatWidget } from "@/components/tables/widgets/AIChatWidget";
 import { EditColumnModal } from "@/components/tables/modals/EditColumnModal";
 import { AddColumnModal } from "@/components/tables/modals/AddColumnModal";
 import AddRecordModalWithImport from "@/components/tables/modals/AddRecordModalWithImport";
@@ -101,29 +102,23 @@ export default function DiceTableView({
   const dataWithPlaceholders = useMemo<NormalizedTableRecord[]>(() => {
     const PLACEHOLDER_COUNT = 50; // Reduced from 200 for better performance
     const placeholders: NormalizedTableRecord[] = [];
-    
+
     for (let i = 0; i < PLACEHOLDER_COUNT; i++) {
       placeholders.push({
         id: `temp-${i}`,
         table_id: table.id,
-        organization_id: normalizedRecords[0]?.organization_id || '',
+        organization_id: normalizedRecords[0]?.organization_id || "",
         data: {},
       } as NormalizedTableRecord);
     }
-    
+
     return [...normalizedRecords, ...placeholders];
   }, [normalizedRecords, table.id]);
 
   const [data, setData] = useState(dataWithPlaceholders);
 
   // Undo/Redo functionality
-  const {
-    canUndo,
-    canRedo,
-    undo,
-    redo,
-    pushHistory,
-  } = useUndoRedo({
+  const { canUndo, canRedo, undo, redo, pushHistory } = useUndoRedo({
     initialData: dataWithPlaceholders,
     maxHistorySize: 50,
     onRestore: (restoredData) => {
@@ -143,13 +138,22 @@ export default function DiceTableView({
   >("idle");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDeduplicationOpen, setIsDeduplicationOpen] = useState(false);
-  const [recordsForDeduplication, setRecordsForDeduplication] = useState<NormalizedTableRecord[]>([]);
+  const [recordsForDeduplication, setRecordsForDeduplication] = useState<
+    NormalizedTableRecord[]
+  >([]);
   const [isEnrichmentOpen, setIsEnrichmentOpen] = useState(false);
-  const [recordsForEnrichment, setRecordsForEnrichment] = useState<NormalizedTableRecord[]>([]);
-  const [enrichmentStatus, setEnrichmentStatus] = useState<'idle' | 'processing' | 'done'>('idle');
+  const [recordsForEnrichment, setRecordsForEnrichment] = useState<
+    NormalizedTableRecord[]
+  >([]);
+  const [enrichmentStatus, setEnrichmentStatus] = useState<
+    "idle" | "processing" | "done"
+  >("idle");
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
-  const [editingColumn, setEditingColumn] = useState<{ id: string; label: string } | null>(null);
+  const [editingColumn, setEditingColumn] = useState<{
+    id: string;
+    label: string;
+  } | null>(null);
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
   const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
 
@@ -226,7 +230,9 @@ export default function DiceTableView({
     const handleSidebarToggle = (e: Event) => {
       const target = e.target as HTMLElement;
       // Look for collapse button with Japanese title in both desktop and mobile sidebars
-      const collapseButton = target.closest('button[title*="折りたたむ"], [data-sidebar-close]');
+      const collapseButton = target.closest(
+        'button[title*="折りたたむ"], [data-sidebar-close]'
+      );
       if (collapseButton) {
         e.preventDefault();
         e.stopPropagation();
@@ -235,17 +241,19 @@ export default function DiceTableView({
     };
 
     // Add listener to both the desktop sidebar and mobile sidebar container
-    const desktopSidebar = document.querySelector('aside');
-    const mobileSidebar = document.querySelector('.fixed.top-16.bottom-0.left-0');
+    const desktopSidebar = document.querySelector("aside");
+    const mobileSidebar = document.querySelector(
+      ".fixed.top-16.bottom-0.left-0"
+    );
 
     const elements = [desktopSidebar, mobileSidebar].filter(Boolean);
 
-    elements.forEach(element => {
+    elements.forEach((element) => {
       element?.addEventListener("click", handleSidebarToggle, true);
     });
 
     return () => {
-      elements.forEach(element => {
+      elements.forEach((element) => {
         element?.removeEventListener("click", handleSidebarToggle, true);
       });
     };
@@ -254,22 +262,27 @@ export default function DiceTableView({
   // Helper function to check if a row is empty
   const isRowEmpty = useCallback((record: NormalizedTableRecord) => {
     const directFields = ["name", "email", "company", "status"] as const;
-    const hasDirectData = directFields.some(field => record[field]);
-    const hasJsonbData = Object.keys(record.data || {}).some(key => record.data[key]);
+    const hasDirectData = directFields.some((field) => record[field]);
+    const hasJsonbData = Object.keys(record.data || {}).some(
+      (key) => record.data[key]
+    );
     return !hasDirectData && !hasJsonbData;
   }, []);
 
   // Mark cell as dirty for incremental change detection
-  const markCellDirty = useCallback((recordId: string, columnId: string, oldValue: any) => {
-    const key: CellKey = `${recordId}-${columnId}`;
-    
-    // Store original value if first edit
-    if (!dirtyCells.current.has(key)) {
-      originalValues.current.set(key, oldValue);
-    }
-    
-    dirtyCells.current.add(key);
-  }, []);
+  const markCellDirty = useCallback(
+    (recordId: string, columnId: string, oldValue: any) => {
+      const key: CellKey = `${recordId}-${columnId}`;
+
+      // Store original value if first edit
+      if (!dirtyCells.current.has(key)) {
+        originalValues.current.set(key, oldValue);
+      }
+
+      dirtyCells.current.add(key);
+    },
+    []
+  );
 
   // Handle data changes with debounced batch save
   const handleDataChange = useCallback(
@@ -304,7 +317,10 @@ export default function DiceTableView({
       // Find what changed by comparing with current data
       const updates: Array<{ record: NormalizedTableRecord; changes: any }> =
         [];
-      const newRecordsToCreate: Array<{ record: NormalizedTableRecord; index: number }> = [];
+      const newRecordsToCreate: Array<{
+        record: NormalizedTableRecord;
+        index: number;
+      }> = [];
 
       fixedData.forEach((newRecord, index) => {
         const oldRecord = data[index];
@@ -313,7 +329,7 @@ export default function DiceTableView({
         }
 
         // Type guard to ensure we have id property
-        if (!('id' in oldRecord) || !('id' in newRecord)) {
+        if (!("id" in oldRecord) || !("id" in newRecord)) {
           return;
         }
 
@@ -322,7 +338,7 @@ export default function DiceTableView({
         }
 
         // Check if this is a placeholder row that now has data
-        const isPlaceholder = oldRecord.id.startsWith('temp-');
+        const isPlaceholder = oldRecord.id.startsWith("temp-");
         const wasEmpty = isRowEmpty(oldRecord);
         const hasData = !isRowEmpty(newRecord);
 
@@ -363,10 +379,10 @@ export default function DiceTableView({
         Object.keys(newDataObj).forEach((key) => {
           const oldValue = oldData[key];
           const newValue = newDataObj[key];
-          
+
           // Skip if both are empty/null/undefined (especially for virtual columns)
           if (!oldValue && !newValue) return;
-          
+
           if (oldValue !== newValue) {
             dataChanges[key] = newValue;
             hasDataChanges = true;
@@ -384,7 +400,7 @@ export default function DiceTableView({
 
       // Update local state immediately for optimistic UI (instant feedback)
       setData(fixedData);
-      
+
       // Push to history for undo/redo (only if there are actual changes)
       if (updates.length > 0 || newRecordsToCreate.length > 0) {
         pushHistory(fixedData);
@@ -469,14 +485,14 @@ export default function DiceTableView({
 
           try {
             // Single batch API call
-            const response = await fetch('/api/records/batch', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
+            const response = await fetch("/api/records/batch", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ updates: batchUpdates }),
             });
 
             if (!response.ok) {
-              throw new Error('Failed to batch save');
+              throw new Error("Failed to batch save");
             }
 
             pendingChanges.current.clear();
@@ -558,64 +574,73 @@ export default function DiceTableView({
   );
 
   // Handle editing column
-  const handleEditColumn = useCallback((columnId: string, currentLabel: string) => {
-    // Find the actual column data
-    const column = columns.find(col => col.name === columnId);
-    if (column) {
-      setEditingColumn({ id: column.id, label: currentLabel });
-      setIsEditColumnOpen(true);
-    }
-  }, [columns]);
+  const handleEditColumn = useCallback(
+    (columnId: string, currentLabel: string) => {
+      // Find the actual column data
+      const column = columns.find((col) => col.name === columnId);
+      if (column) {
+        setEditingColumn({ id: column.id, label: currentLabel });
+        setIsEditColumnOpen(true);
+      }
+    },
+    [columns]
+  );
 
   // Handle saving column edit
-  const handleSaveColumnEdit = useCallback(async (columnId: string, newLabel: string) => {
-    try {
-      const response = await fetch(`/api/columns/${columnId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: newLabel }),
-      });
+  const handleSaveColumnEdit = useCallback(
+    async (columnId: string, newLabel: string) => {
+      try {
+        const response = await fetch(`/api/columns/${columnId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label: newLabel }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to update column");
+        if (!response.ok) {
+          throw new Error("Failed to update column");
+        }
+
+        router.refresh();
+      } catch (error) {
+        console.error("Error updating column:", error);
+        throw error;
       }
-
-      router.refresh();
-    } catch (error) {
-      console.error("Error updating column:", error);
-      throw error;
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   // Handle deleting column
-  const handleDeleteColumn = useCallback(async (columnId: string, columnLabel: string) => {
-    const confirmed = window.confirm(
-      `「${columnLabel}」列を削除してもよろしいですか？\n\nこの操作は取り消せません。この列のすべてのデータが失われます。`
-    );
+  const handleDeleteColumn = useCallback(
+    async (columnId: string, columnLabel: string) => {
+      const confirmed = window.confirm(
+        `「${columnLabel}」列を削除してもよろしいですか？\n\nこの操作は取り消せません。この列のすべてのデータが失われます。`
+      );
 
-    if (!confirmed) return;
+      if (!confirmed) return;
 
-    try {
-      // Find the actual column data
-      const column = columns.find(col => col.name === columnId);
-      if (!column) {
-        throw new Error("Column not found");
+      try {
+        // Find the actual column data
+        const column = columns.find((col) => col.name === columnId);
+        if (!column) {
+          throw new Error("Column not found");
+        }
+
+        const response = await fetch(`/api/columns/${column.id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete column");
+        }
+
+        router.refresh();
+      } catch (error) {
+        console.error("Error deleting column:", error);
+        alert("列の削除に失敗しました");
       }
-
-      const response = await fetch(`/api/columns/${column.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete column");
-      }
-
-      router.refresh();
-    } catch (error) {
-      console.error("Error deleting column:", error);
-      alert("列の削除に失敗しました");
-    }
-  }, [columns, router]);
+    },
+    [columns, router]
+  );
 
   // Handle adding column
   const handleAddColumn = useCallback(() => {
@@ -623,121 +648,137 @@ export default function DiceTableView({
   }, []);
 
   // Handle column reordering
-  const handleColumnReorder = useCallback(async (sourceColumnId: string, targetColumnId: string) => {
-    // Don't reorder virtual columns or special columns
-    if (sourceColumnId.startsWith('col_') || targetColumnId.startsWith('col_')) return;
-    if (sourceColumnId === 'select' || sourceColumnId === 'status') return;
-    if (targetColumnId === 'select' || targetColumnId === 'status') return;
+  const handleColumnReorder = useCallback(
+    async (sourceColumnId: string, targetColumnId: string) => {
+      // Don't reorder virtual columns or special columns
+      if (
+        sourceColumnId.startsWith("col_") ||
+        targetColumnId.startsWith("col_")
+      )
+        return;
+      if (sourceColumnId === "select" || sourceColumnId === "status") return;
+      if (targetColumnId === "select" || targetColumnId === "status") return;
 
-    // Find the source and target columns
-    const sourceColumn = columns.find(col => col.name === sourceColumnId);
-    const targetColumn = columns.find(col => col.name === targetColumnId);
+      // Find the source and target columns
+      const sourceColumn = columns.find((col) => col.name === sourceColumnId);
+      const targetColumn = columns.find((col) => col.name === targetColumnId);
 
-    if (!sourceColumn || !targetColumn) return;
+      if (!sourceColumn || !targetColumn) return;
 
-    // Create new column order
-    const newColumns = [...columns];
-    const sourceIndex = newColumns.findIndex(col => col.id === sourceColumn.id);
-    const targetIndex = newColumns.findIndex(col => col.id === targetColumn.id);
+      // Create new column order
+      const newColumns = [...columns];
+      const sourceIndex = newColumns.findIndex(
+        (col) => col.id === sourceColumn.id
+      );
+      const targetIndex = newColumns.findIndex(
+        (col) => col.id === targetColumn.id
+      );
 
-    // Remove source and insert at target position
-    const [removed] = newColumns.splice(sourceIndex, 1);
-    newColumns.splice(targetIndex, 0, removed);
+      // Remove source and insert at target position
+      const [removed] = newColumns.splice(sourceIndex, 1);
+      newColumns.splice(targetIndex, 0, removed);
 
-    // Update display_order for all affected columns
-    const updates = newColumns.map((col, index) => ({
-      id: col.id,
-      display_order: index,
-    }));
+      // Update display_order for all affected columns
+      const updates = newColumns.map((col, index) => ({
+        id: col.id,
+        display_order: index,
+      }));
 
-    try {
-      const response = await fetch('/api/columns/reorder', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates }),
-      });
+      try {
+        const response = await fetch("/api/columns/reorder", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ updates }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to reorder columns');
+        if (!response.ok) {
+          throw new Error("Failed to reorder columns");
+        }
+
+        router.refresh();
+      } catch (error) {
+        console.error("Error reordering columns:", error);
+        alert("列の並び替えに失敗しました");
       }
-
-      router.refresh();
-    } catch (error) {
-      console.error('Error reordering columns:', error);
-      alert('列の並び替えに失敗しました');
-    }
-  }, [columns, router]);
+    },
+    [columns, router]
+  );
 
   // Handle saving new column
-  const handleSaveNewColumn = useCallback(async (columnData: {
-    table_id: string;
-    name: string;
-    label: string;
-    type: string;
-    display_order: number;
-  }) => {
-    try {
-      const response = await fetch(`/api/columns`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(columnData),
-      });
+  const handleSaveNewColumn = useCallback(
+    async (columnData: {
+      table_id: string;
+      name: string;
+      label: string;
+      type: string;
+      display_order: number;
+    }) => {
+      try {
+        const response = await fetch(`/api/columns`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(columnData),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to create column");
+        if (!response.ok) {
+          throw new Error("Failed to create column");
+        }
+
+        router.refresh();
+      } catch (error) {
+        console.error("Error creating column:", error);
+        throw error;
       }
-
-      router.refresh();
-    } catch (error) {
-      console.error("Error creating column:", error);
-      throw error;
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   // Handle CSV Export
   const handleExportCSV = useCallback(async () => {
     try {
-      const XLSX = await import('xlsx');
-      
+      const XLSX = await import("xlsx");
+
       // Prepare headers
-      const headers = columns.map(col => col.label);
-      headers.push('ステータス'); // Add status column
+      const headers = columns.map((col) => col.label);
+      headers.push("ステータス"); // Add status column
 
       // Prepare data rows
-      const rows = normalizedRecords.map(record => {
+      const rows = normalizedRecords.map((record) => {
         const row: any[] = [];
-        
-        columns.forEach(column => {
-          const isDirectProperty = ['name', 'email', 'company'].includes(column.name);
-          const value = isDirectProperty 
-            ? (record as any)[column.name] 
+
+        columns.forEach((column) => {
+          const isDirectProperty = ["name", "email", "company"].includes(
+            column.name
+          );
+          const value = isDirectProperty
+            ? (record as any)[column.name]
             : record.data?.[column.name];
-          row.push(value ?? '');
+          row.push(value ?? "");
         });
-        
+
         // Add status
-        row.push(record.status ?? '');
-        
+        row.push(record.status ?? "");
+
         return row;
       });
 
       // Create worksheet
       const wsData = [headers, ...rows];
       const ws = XLSX.utils.aoa_to_sheet(wsData);
-      
+
       // Create workbook
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Data');
-      
+      XLSX.utils.book_append_sheet(wb, ws, "Data");
+
       // Generate filename with timestamp
-      const timestamp = new Date().toISOString().split('T')[0];
+      const timestamp = new Date().toISOString().split("T")[0];
       const filename = `${table.name}_${timestamp}.csv`;
-      
+
       // Download
       XLSX.writeFile(wb, filename);
     } catch (error) {
-      console.error('Error exporting CSV:', error);
-      alert('CSVのエクスポートに失敗しました');
+      console.error("Error exporting CSV:", error);
+      alert("CSVのエクスポートに失敗しました");
     }
   }, [columns, normalizedRecords, table.name]);
 
@@ -869,6 +910,8 @@ export default function DiceTableView({
             }),
         header: column.label,
         enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: "includesString", // Use case-insensitive string matching
         meta: {
           label: column.label,
           cell: {
@@ -901,11 +944,10 @@ export default function DiceTableView({
     // Users can add more columns manually if needed
     for (let i = 0; i < 20; i++) {
       const columnKey = `col_${i}`;
-      
+
       cols.push({
         id: columnKey,
-        accessorFn: (row: NormalizedTableRecord) =>
-          row.data?.[columnKey] ?? "",
+        accessorFn: (row: NormalizedTableRecord) => row.data?.[columnKey] ?? "",
         header: "", // Empty header
         enableSorting: false, // Disable sorting for virtual columns to improve performance
         size: 120,
@@ -947,6 +989,57 @@ export default function DiceTableView({
     },
   });
 
+  // Handle applying filters from AI Chat - now dynamic for any column
+  const handleApplyFilter = useCallback(
+    (filters: any) => {
+      console.log("[AI Filter] Applying filters:", filters);
+      
+      // Clear existing filters first
+      dataGridTable.resetColumnFilters();
+
+      // Apply each filter dynamically
+      Object.entries(filters).forEach(([columnName, filterValue]) => {
+        const column = dataGridTable.getColumn(columnName);
+        if (column) {
+          console.log(`[AI Filter] Setting filter on column "${columnName}":`, filterValue);
+          column.setFilterValue(filterValue);
+        } else {
+          console.warn(`[AI Filter] Column "${columnName}" not found in table`);
+        }
+      });
+      
+      // Log the result
+      const currentFilters = dataGridTable.getState().columnFilters;
+      console.log("[AI Filter] Current column filters after apply:", currentFilters);
+      console.log("[AI Filter] Total rows after filter:", dataGridTable.getFilteredRowModel().rows.length);
+    },
+    [dataGridTable]
+  );
+
+  const handleClearFilter = useCallback(() => {
+    dataGridTable.resetColumnFilters();
+  }, [dataGridTable]);
+
+  // Handle applying sort from AI Chat
+  const handleApplySort = useCallback(
+    (columnName: string, descending: boolean = true) => {
+      console.log(
+        `[AI Sort] Applying sort: ${columnName} ${descending ? "DESC" : "ASC"}`
+      );
+      const column = dataGridTable.getColumn(columnName);
+      if (column) {
+        dataGridTable.setSorting([{ id: columnName, desc: descending }]);
+      } else {
+        console.warn(`[AI Sort] Column "${columnName}" not found in table`);
+      }
+    },
+    [dataGridTable]
+  );
+
+  const handleClearSort = useCallback(() => {
+    dataGridTable.setSorting([]);
+  }, [dataGridTable]);
+
   return (
     <>
       {/* Sidebar - Only shown when open, positioned below header */}
@@ -984,8 +1077,8 @@ export default function DiceTableView({
       {/* Main Content */}
       <div className="fixed inset-0 pt-16 z-30 flex flex-col bg-white">
         {/* Sticky Toolbar - Fixed at top, won't scroll with table */}
-        <div 
-          data-grid-popover 
+        <div
+          data-grid-popover
           className="sticky top-0 z-20 flex items-center justify-between px-4 h-12 bg-white border-b border-[#E4E4E7] shrink-0"
         >
           <div className="flex items-center gap-3">
@@ -1001,21 +1094,29 @@ export default function DiceTableView({
             <h1 className="text-sm font-semibold text-[#09090B]">
               {table.name}
             </h1>
-            
             {/* Export Button - Icon only, text on hover */}
             <button
               onClick={handleExportCSV}
               className="group p-1.5 hover:bg-[#F4F4F5] rounded-lg transition-colors relative"
               title="CSVエクスポート"
             >
-              <svg className="w-4 h-4 text-[#71717B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              <svg
+                className="w-4 h-4 text-[#71717B]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                />
               </svg>
               <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                 エクスポート
               </span>
             </button>
-            
             {/* Undo/Redo buttons - moved here with reduced spacing */}
             <Button
               variant="ghost"
@@ -1025,11 +1126,20 @@ export default function DiceTableView({
               title="元に戻す (Ctrl+Z)"
               className="h-7 w-7 p-0"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                />
               </svg>
             </Button>
-            
             <Button
               variant="ghost"
               size="sm"
@@ -1038,11 +1148,20 @@ export default function DiceTableView({
               title="やり直す (Ctrl+Shift+Z)"
               className="h-7 w-7 p-0"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"
+                />
               </svg>
             </Button>
-            
             {isSaving && (
               <div className="flex items-center gap-2 text-xs text-[#71717B]">
                 <svg
@@ -1113,72 +1232,106 @@ export default function DiceTableView({
               onClick={() => setIsAddRecordOpen(true)}
               className="gap-2"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               レコードを追加
             </Button>
-            
+
             <DataGridSortMenu table={dataGridTable} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsAIChatOpen(true)}
-              className="gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-              AIチャット
-            </Button>
+            <DataGridFilterMenu table={dataGridTable} />
+            {/* AI Chat Button Removed - Replaced by Floating Widget */}
             <Button
               variant="outline"
               size="sm"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 // If processing or done, just reopen the modal
-                if (enrichmentStatus !== 'idle') {
+                if (enrichmentStatus !== "idle") {
                   setIsEnrichmentOpen(true);
                   return;
                 }
-                
+
                 const selectedRows = dataGridTable.getSelectedRowModel().rows;
-                
+
                 if (selectedRows.length === 0) {
-                  alert('エンリッチメントする行を選択してください');
+                  alert("エンリッチメントする行を選択してください");
                   return;
                 }
-                
+
                 const records = selectedRows
-                  .map(row => row.original)
-                  .filter(record => !record.id.startsWith('temp-'));
-                
+                  .map((row) => row.original)
+                  .filter((record) => !record.id.startsWith("temp-"));
+
                 setRecordsForEnrichment(records);
                 setIsEnrichmentOpen(true);
               }}
-              disabled={enrichmentStatus === 'idle' && dataGridTable.getSelectedRowModel().rows.length === 0}
-              className={enrichmentStatus === 'done' ? 'border-green-500 text-green-700' : ''}
+              disabled={
+                enrichmentStatus === "idle" &&
+                dataGridTable.getSelectedRowModel().rows.length === 0
+              }
+              className={
+                enrichmentStatus === "done"
+                  ? "border-green-500 text-green-700"
+                  : ""
+              }
             >
-              {enrichmentStatus === 'processing' && (
+              {enrichmentStatus === "processing" && (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   処理中...
                 </>
               )}
-              {enrichmentStatus === 'done' && (
+              {enrichmentStatus === "done" && (
                 <>
-                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   完了
                 </>
               )}
-              {enrichmentStatus === 'idle' && (
+              {enrichmentStatus === "idle" && (
                 <>
                   連絡先を取得
                   {dataGridTable.getSelectedRowModel().rows.length > 0 && (
@@ -1196,23 +1349,25 @@ export default function DiceTableView({
                 // Prevent any default behavior and stop propagation
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 // Immediately capture selected rows before any state changes
                 const selectedRows = dataGridTable.getSelectedRowModel().rows;
-                
+
                 if (selectedRows.length < 2) {
-                  alert('重複を検出するには、少なくとも2つの行を選択してください');
+                  alert(
+                    "重複を検出するには、少なくとも2つの行を選択してください"
+                  );
                   return;
                 }
-                
+
                 // Extract and store the records immediately
                 const records = selectedRows
-                  .map(row => row.original)
-                  .filter(record => !record.id.startsWith('temp-'));
-                
+                  .map((row) => row.original)
+                  .filter((record) => !record.id.startsWith("temp-"));
+
                 // Store records in state before opening modal
                 setRecordsForDeduplication(records);
-                
+
                 // Now open the modal
                 setIsDeduplicationOpen(true);
               }}
@@ -1231,8 +1386,8 @@ export default function DiceTableView({
         {/* Scrollable Table Container - Takes remaining space */}
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="flex-1 overflow-hidden">
-            <DataGrid 
-              table={dataGridTable} 
+            <DataGrid
+              table={dataGridTable}
               {...dataGridProps}
               onEditColumn={handleEditColumn}
               onDeleteColumn={handleDeleteColumn}
@@ -1240,7 +1395,7 @@ export default function DiceTableView({
               onColumnReorder={handleColumnReorder}
             />
           </div>
-          
+
           {/* Load More Button */}
           {hasMore && (
             <div className="border-t border-[#E4E4E7] p-3 bg-white">
@@ -1296,14 +1451,14 @@ export default function DiceTableView({
           setIsEnrichmentOpen(open);
           if (!open) {
             setRecordsForEnrichment([]);
-            setEnrichmentStatus('idle');
+            setEnrichmentStatus("idle");
           }
         }}
         tableId={table.id}
         columns={columns}
         records={recordsForEnrichment as any}
         onComplete={() => {
-          setEnrichmentStatus('done');
+          setEnrichmentStatus("done");
           router.refresh();
         }}
       />
@@ -1325,13 +1480,19 @@ export default function DiceTableView({
         />
       )}
 
-      {/* AI Chat Modal */}
-      <AIChatModal
-        open={isAIChatOpen}
-        onOpenChange={setIsAIChatOpen}
+      {/* AI Chat Widget */}
+      <AIChatWidget
         tableId={table.id}
         tableName={table.name}
+        onApplyFilter={handleApplyFilter}
+        onClearFilter={handleClearFilter}
+        onApplySort={handleApplySort}
+        onClearSort={handleClearSort}
         columns={columns}
+        selectedRows={dataGridTable.getSelectedRowModel().rows}
+        onEnrichmentComplete={() => {
+          router.refresh();
+        }}
       />
 
       {/* Edit Column Modal */}
@@ -1366,7 +1527,7 @@ export default function DiceTableView({
             tableName={table.name}
             columns={columns}
             statuses={statuses}
-            organizationId={normalizedRecords[0]?.organization_id || ''}
+            organizationId={normalizedRecords[0]?.organization_id || ""}
             onClose={() => {
               setIsAddRecordOpen(false);
               router.refresh();

@@ -15,6 +15,8 @@ interface ProcessQueryParams {
   message: string;
   conversationHistory: Message[];
   organizationId: string;
+  selectedRowIds?: string[];
+  selectedRowSummary?: string;
 }
 
 interface AIResponse {
@@ -25,27 +27,39 @@ interface AIResponse {
     rows: Array<Record<string, any>>;
   };
   functionCalled?: string;
+  functionArgs?: any;
 }
 
 // Function definitions for Gemini
 const functions: FunctionDeclaration[] = [
   {
-    name: "query_records",
-    description: "Query records from the current table with filters. Use this when user asks to show, display, or list records with specific criteria.",
+    name: "sort_table",
+    description: "SORT the main table view by a column. Use when user wants to sort/order the table (e.g., '〜順にして', '〜でソート', '高い順', '低い順'). Map user's column name to actual column names from the table schema.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
-        status: {
+        column: {
           type: SchemaType.STRING,
-          description: "Filter by status value",
+          description: "Column name to sort by. Map user intent to actual column names (e.g., '売り上げ' → 'gmv', '会社名' → 'company', 'メール' → 'email'). Use the exact column names from the table schema.",
         },
-        company: {
-          type: SchemaType.STRING,
-          description: "Filter by company name",
+        descending: {
+          type: SchemaType.BOOLEAN,
+          description: "Sort in descending order (high to low). true for '高い順'/'降順', false for '低い順'/'昇順'. Default: true",
         },
-        email: {
-          type: SchemaType.STRING,
-          description: "Filter by email",
+      },
+      required: ["column"],
+    },
+  },
+  {
+    name: "query_records",
+    description: "Query records and APPLY FILTERS to the main table view. Use ONLY when user explicitly wants to filter/view the table (e.g., '〜を表示して', '〜を見せて', '〜のレコードを表示'). Do NOT use for questions asking for specific information. Map user's natural language to actual column names from the table schema.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        filters: {
+          type: SchemaType.OBJECT,
+          description: "Dynamic filters object where keys are column names and values are filter values. Map user intent to actual column names (e.g., '会社名' → 'company', 'GMV' → 'gmv', 'ステータス' → 'status'). Use the exact column names from the table schema provided in the context.",
+          properties: {}
         },
         limit: {
           type: SchemaType.NUMBER,
@@ -202,9 +216,9 @@ export async function processAIQuery(
   params: ProcessQueryParams
 ): Promise<AIResponse> {
   try {
-    const { tableId, tableName, message, conversationHistory, organizationId } = params;
+    const { tableId, tableName, message, conversationHistory, organizationId, selectedRowIds, selectedRowSummary } = params;
 
-    console.log("[AI Chat] Processing query:", { tableId, tableName, message });
+    console.log("[AI Chat] Processing query:", { tableId, tableName, message, selectedRowsCount: selectedRowIds?.length || 0 });
 
     // Get table context
     const context = await getTableContext(tableId, organizationId);
@@ -215,7 +229,7 @@ export async function processAIQuery(
     });
 
     // Build system prompt
-    const systemPrompt = buildSystemPrompt(tableName, context);
+    const systemPrompt = buildSystemPrompt(tableName, context, selectedRowIds, selectedRowSummary);
 
     // Initialize Gemini model
     const model = genAI.getGenerativeModel({
@@ -277,6 +291,7 @@ export async function processAIQuery(
           content: functionResult.content,
           data: functionResult.data,
           functionCalled: functionCall.name,
+          functionArgs: functionCall.args,
         };
       }
 
@@ -294,6 +309,7 @@ export async function processAIQuery(
         type: "text",
         content: followUpResult.response.text(),
         functionCalled: functionCall.name,
+        functionArgs: functionCall.args,
       };
     }
 
@@ -315,7 +331,9 @@ function buildSystemPrompt(
     columns: any[];
     statuses: any[];
     sampleRecords: any[];
-  }
+  },
+  selectedRowIds?: string[],
+  selectedRowSummary?: string
 ): string {
   const columnsList = context.columns
     .map((col) => `- ${col.label} (${col.name}): ${col.type}`)
@@ -330,6 +348,13 @@ function buildSystemPrompt(
       ? JSON.stringify(context.sampleRecords.slice(0, 3), null, 2)
       : "データがありません";
 
+  // Add selected rows context if available
+  const selectedRowsContext = selectedRowIds && selectedRowIds.length > 0
+    ? `\n\n【重要】ユーザーは現在${selectedRowIds.length}行を選択しています${selectedRowSummary ? `：${selectedRowSummary}` : ''}。
+「選択された」「この」「これら」などの言葉は、選択された行を指します。
+選択された行に関する質問には、その行のデータのみを参照して回答してください。`
+    : '';
+
   return `あなたは「${tableName}」というCRMテーブルのデータベースアシスタントです。
 
 テーブルの構造：
@@ -341,18 +366,35 @@ ${columnsList}
 ${statusesList}
 
 サンプルデータ（最初の3件）：
-${sampleDataText}
+${sampleDataText}${selectedRowsContext}
 
 ユーザーの質問に対して、以下のように対応してください：
 
+【重要】関数の使い分け：
+- sort_table: ユーザーが「テーブルをソートしたい」場合に使用
+  例：「売り上げ高い順にして」「GMVでソート」「名前順に並べて」
+- query_records: ユーザーが「テーブルにフィルタを適用して表示したい」場合のみ使用
+  例：「東京の会社を表示して」「ステータスがActiveのレコードを見せて」
+- その他の関数: ユーザーが「答えを知りたい」場合に使用（テーブルは変更しない）
+  例：「最高のGMVは？」「何件ある？」「電話番号は何？」
+
 1. 一般的な質問には直接答える
-2. データを表示する必要がある場合は、適切な関数を呼び出す
-3. 統計情報が必要な場合は、get_statistics関数を使用する
-4. 検索が必要な場合は、search_records関数を使用する
-5. 重複チェックが必要な場合は、find_duplicates関数を使用する
-6. 数値の集計（合計、平均、最大、最小）が必要な場合は、aggregate_data関数を使用する
-7. 特定の期間のデータが必要な場合は、query_with_date_range関数を使用する
-8. トップN件や最高値のレコードが必要な場合は、get_top_records関数を使用する
+2. テーブルを**ソート**する必要がある場合は、sort_table関数を使用する
+3. テーブルを**フィルタして表示**する必要がある場合のみ、query_records関数を使用する
+4. 統計情報が必要な場合は、get_statistics関数を使用する
+5. 検索が必要な場合は、search_records関数を使用する
+6. 重複チェックが必要な場合は、find_duplicates関数を使用する
+7. 数値の集計（合計、平均、最大、最小）が必要な場合は、aggregate_data関数を使用する
+8. 特定の期間のデータが必要な場合は、query_with_date_range関数を使用する
+9. トップN件や最高値のレコードが必要な場合は、get_top_records関数を使用する（答えを返すのみ、テーブルはソートしない）
+
+【カラム名のマッピング重要】
+sort_table、query_records関数を使用する際は、ユーザーの自然言語をテーブルの実際のカラム名にマッピングしてください：
+- 日本語のカラムラベルを対応する英語のカラム名に変換する
+- 例：「売り上げ」→「gmv」、「会社名」→「company」、「メール」→「email」、「ステータス」→「status」
+- sort_tableのcolumnパラメータ、filtersオブジェクトのキーには必ず上記のカラムリストにある実際のカラム名（name）を使用する
+- 例：sort_table(column: "gmv", descending: true)
+- 例：filters: { "company": "東京", "status": "active" }
 
 日付範囲の指定：
 - 「今日」「本日」→ today

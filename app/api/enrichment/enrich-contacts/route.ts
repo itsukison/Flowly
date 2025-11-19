@@ -132,29 +132,72 @@ async function enrichRecordsInBackground(
       FIRECRAWL_API_KEY!
     );
 
-    // Build target fields
-    const targetFields: EnrichmentField[] = targetColumns.map(col => ({
-      name: col,
-      type: 'text',
-      description: col,
-    }));
+    // Build target fields, filtering out fields that already have values
+    const targetFields: EnrichmentField[] = targetColumns
+      .filter(col => {
+        // Check if the field is empty in the record
+        const recordData = records[0]; // Check first record for structure
+        const directValue = (recordData as any)[col];
+        const jsonbValue = recordData.data?.[col];
+        
+        // Include field if it's empty (null, undefined, or empty string)
+        return !directValue && !jsonbValue;
+      })
+      .map(col => ({
+        name: col,
+        displayName: col,
+        description: col,
+        type: 'string' as const,
+        required: false,
+      }));
+
+    if (targetFields.length === 0) {
+      enrichmentJobManager.completeJob(jobId);
+      console.log('[Enrichment] No empty fields to enrich. Skipping.');
+      return;
+    }
+
+    console.log(`[Enrichment] Fields to enrich: ${targetFields.map(f => f.name).join(', ')}`);
 
     // Enrich each record
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
       const recordName = record.name || record.company || `Record ${i + 1}`;
 
+      // Filter target fields for THIS specific record (skip fields that already have data)
+      const recordTargetFields = targetFields.filter(field => {
+        const directValue = (record as any)[field.name];
+        const jsonbValue = record.data?.[field.name];
+        const isEmpty = !directValue && !jsonbValue;
+        
+        if (!isEmpty) {
+          console.log(`[Enrichment] Skipping ${field.name} for ${recordName} - already filled`);
+        }
+        
+        return isEmpty;
+      });
+
+      if (recordTargetFields.length === 0) {
+        enrichmentJobManager.addResult(jobId, {
+          recordId: record.id,
+          success: true,
+          fields: [],
+          sources: [],
+        });
+        continue;
+      }
+
       enrichmentJobManager.updateProgress(
         jobId,
         i,
         recordName,
-        `Enriching ${recordName}...`
+        `Enriching ${recordName} (${recordTargetFields.length} fields)...`
       );
 
       try {
         const result = await agent.enrichRecord(
           record,
-          targetFields,
+          recordTargetFields,
           (message, type) => {
             enrichmentJobManager.updateProgress(jobId, i, recordName, message);
           }

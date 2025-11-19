@@ -4,8 +4,10 @@ import {
   type ColumnDef,
   getCoreRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   type RowSelectionState,
   type SortingState,
+  type ColumnFiltersState,
   type TableOptions,
   type Updater,
   useReactTable,
@@ -55,6 +57,7 @@ function useAsRef<T>(data: T) {
 
 interface DataGridState {
   sorting: SortingState;
+  columnFilters: ColumnFiltersState;
   rowHeight: RowHeightValue;
   rowSelection: RowSelectionState;
   selectionState: SelectionState;
@@ -146,6 +149,7 @@ function useDataGrid<TData>({
   const stateRef = useLazyRef<DataGridState>(() => {
     return {
       sorting: initialState?.sorting ?? [],
+      columnFilters: initialState?.columnFilters ?? [],
       rowHeight: rowHeightProp,
       rowSelection: initialState?.rowSelection ?? {},
       selectionState: {
@@ -236,6 +240,7 @@ function useDataGrid<TData>({
   const matchIndex = useStore(store, (state) => state.matchIndex);
   const searchOpen = useStore(store, (state) => state.searchOpen);
   const sorting = useStore(store, (state) => state.sorting);
+  const columnFilters = useStore(store, (state) => state.columnFilters);
   const rowSelection = useStore(store, (state) => state.rowSelection);
   const contextMenu = useStore(store, (state) => state.contextMenu);
   const rowHeight = useStore(store, (state) => state.rowHeight);
@@ -1527,6 +1532,18 @@ function useDataGrid<TData>({
     [store],
   );
 
+  const onColumnFiltersChange = React.useCallback(
+    (updater: Updater<ColumnFiltersState>) => {
+      const currentState = store.getState();
+      const newColumnFilters =
+        typeof updater === "function"
+          ? updater(currentState.columnFilters)
+          : updater;
+      store.setState("columnFilters", newColumnFilters);
+    },
+    [store],
+  );
+
   const onRowSelectionChange = React.useCallback(
     (updater: Updater<RowSelectionState>) => {
       const currentState = store.getState();
@@ -1643,13 +1660,16 @@ function useDataGrid<TData>({
       state: {
         ...dataGridPropsRef.current.state,
         sorting,
+        columnFilters,
         rowSelection,
       },
       onRowSelectionChange,
       onSortingChange,
+      onColumnFiltersChange,
       columnResizeMode: "onChange",
       getCoreRowModel: getCoreRowModel(),
       getSortedRowModel: getSortedRowModel(),
+      getFilteredRowModel: getFilteredRowModel(),
       meta: {
         ...dataGridPropsRef.current.meta,
         dataGridRef,
@@ -1690,9 +1710,11 @@ function useDataGrid<TData>({
       defaultColumn,
       initialState,
       sorting,
+      columnFilters,
       rowSelection,
       onRowSelectionChange,
       onSortingChange,
+      onColumnFiltersChange,
       focusedCell,
       editingCell,
       selectionState,

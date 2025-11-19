@@ -46,6 +46,7 @@ declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     label?: string;
     cell?: Cell;
+    isVirtual?: boolean;
   }
 
   // biome-ignore lint/correctness/noUnusedVariables: TData is used in the TableMeta interface
@@ -56,9 +57,15 @@ declare module "@tanstack/react-table" {
     selectionState?: SelectionState;
     searchOpen?: boolean;
     isScrolling?: boolean;
+    fillHandleState?: {
+      isFilling: boolean;
+      startCell: CellPosition | null;
+      endCell: CellPosition | null;
+    };
     getIsCellSelected?: (rowIndex: number, columnId: string) => boolean;
     getIsSearchMatch?: (rowIndex: number, columnId: string) => boolean;
     getIsActiveSearchMatch?: (rowIndex: number, columnId: string) => boolean;
+    getIsFillTarget?: (rowIndex: number, columnId: string) => boolean;
     onDataUpdate?: (props: UpdateCell | Array<UpdateCell>) => void;
     onRowsDelete?: (rowIndices: number[]) => void | Promise<void>;
     onColumnClick?: (columnId: string) => void;
@@ -89,6 +96,12 @@ declare module "@tanstack/react-table" {
       direction?: NavigationDirection;
       moveToNextRow?: boolean;
     }) => void;
+    onFillHandleMouseDown?: (
+      rowIndex: number,
+      columnId: string,
+      event: React.MouseEvent,
+    ) => void;
+    onFillHandleMouseEnter?: (rowIndex: number, columnId: string) => void;
     contextMenu?: ContextMenuState;
     onContextMenuOpenChange?: (open: boolean) => void;
     rowHeight?: RowHeightValue;

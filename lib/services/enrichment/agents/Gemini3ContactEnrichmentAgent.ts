@@ -51,7 +51,7 @@ export class Gemini3ContactEnrichmentAgent {
 
   /**
    * Enrich a single record with target fields
-   * Uses Gemini 3 with full context, falls back to Firecrawl if needed
+   * Uses Gemini 3 with full context, uses Firecrawl for email/phone
    */
   async enrichRecord(
     record: TableRecord,
@@ -69,88 +69,83 @@ export class Gemini3ContactEnrichmentAgent {
       // Build context from ALL existing row data
       const context = this.buildRecordContext(record);
       
-      onProgress?.(`Enriching ${recordName}...`, 'info');
+      // Separate fields: email/phone go to Firecrawl, others go to Gemini
+      const emailPhoneFields = targetFields.filter(f => 
+        f.name.toLowerCase().includes('email') || 
+        f.name.toLowerCase().includes('phone') ||
+        f.name.toLowerCase().includes('tel') ||
+        f.name.toLowerCase().includes('contact')
+      );
+      const geminiFields = targetFields.filter(f => !emailPhoneFields.includes(f));
       
-      // Phase 1: Try Gemini 3 with full context
-      const enriched = await this.enrichWithGemini3(context, targetFields, record);
+      const enrichedFields: Array<{ name: string; value: any; confidence: number }> = [];
+      const sources: SourceAttribution[] = [];
       
-      // Check confidence for each field
-      const lowConfidenceFields = enriched.fields.filter(f => f.confidence < CONFIDENCE_THRESHOLD);
-      
-      if (lowConfidenceFields.length > 0) {
-        const lowConfFieldNames = lowConfidenceFields.map(f => f.name).join(', ');
-        onProgress?.(
-          `Low confidence for ${lowConfFieldNames}, using Firecrawl fallback...`,
-          'warning'
-        );
-        
-        // Phase 2: Fallback to Firecrawl for low-confidence fields
-        const fallbackFields = targetFields.filter(f => 
-          lowConfidenceFields.some(lf => lf.name === f.name)
-        );
-        
-        const fallbackEnriched = await this.enrichWithFirecrawl(
-          record,
-          fallbackFields,
-          onProgress
-        );
-        
-        // Merge results: Use Firecrawl data for low-confidence fields
-        const mergedFields = enriched.fields.map(field => {
-          const fallbackField = fallbackEnriched.fields.find(f => f.name === field.name);
-          if (fallbackField && fallbackField.value !== null) {
-            return fallbackField;
-          }
-          return field;
-        });
-        
-        return {
-          recordId: record.id,
-          success: true,
-          fields: mergedFields,
-          sources: [...enriched.sources, ...fallbackEnriched.sources],
-        };
+      // Phase 1: Use Gemini for non-contact fields
+      if (geminiFields.length > 0) {
+        onProgress?.(`Enriching ${recordName} with Gemini...`, 'info');
+        const geminiResult = await this.enrichWithGemini3(context, geminiFields, record);
+        enrichedFields.push(...geminiResult.fields);
+        sources.push(...geminiResult.sources);
       }
       
-      // All fields have high confidence
-      onProgress?.(`Successfully enriched ${recordName}`, 'success');
+      // Phase 2: Use Firecrawl specifically for email/phone (Gemini is bad at these)
+      const website = record.data?.website;
+      if (emailPhoneFields.length > 0 && website) {
+        onProgress?.(`Fetching contact info from ${website}...`, 'info');
+        console.log(`[Contact Enrichment] Using Firecrawl for email/phone fields: ${emailPhoneFields.map(f => f.name).join(', ')}`);
+
+        try {
+          const firecrawlResult = await this.enrichWithFirecrawl(
+            website,
+            emailPhoneFields,
+            recordName
+          );
+          
+          enrichedFields.push(...firecrawlResult.fields);
+          sources.push(...firecrawlResult.sources);
+          
+          onProgress?.(`Successfully enriched ${recordName}`, 'success');
+        } catch (firecrawlError) {
+          console.error(`[Contact Enrichment] Firecrawl failed for ${recordName}:`, firecrawlError);
+          // Add empty fields for failed Firecrawl attempts
+          emailPhoneFields.forEach(field => {
+            enrichedFields.push({
+              name: field.name,
+              value: null,
+              confidence: 0
+            });
+          });
+          onProgress?.(`Could not fetch contact info for ${recordName}`, 'warning');
+        }
+      } else if (emailPhoneFields.length > 0 && !website) {
+        // No website available, can't use Firecrawl
+        console.log(`[Contact Enrichment] No website for ${recordName}, skipping email/phone enrichment`);
+        emailPhoneFields.forEach(field => {
+          enrichedFields.push({
+            name: field.name,
+            value: null,
+            confidence: 0
+          });
+        });
+      }
       
       return {
         recordId: record.id,
         success: true,
-        fields: enriched.fields,
-        sources: enriched.sources,
+        fields: enrichedFields,
+        sources,
       };
-      
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[Contact Enrichment] Error:`, error);
-      onProgress?.(`Failed to enrich ${recordName}: ${errorMsg}`, 'error');
+      console.error(`[Contact Enrichment] Error enriching ${recordName}:`, error);
       
-      // Try Firecrawl as last resort
-      try {
-        onProgress?.(`Gemini 3 failed, trying Firecrawl...`, 'warning');
-        const fallbackEnriched = await this.enrichWithFirecrawl(
-          record,
-          targetFields,
-          onProgress
-        );
-        
-        return {
-          recordId: record.id,
-          success: true,
-          fields: fallbackEnriched.fields,
-          sources: fallbackEnriched.sources,
-        };
-      } catch (fallbackError) {
-        return {
-          recordId: record.id,
-          success: false,
-          fields: targetFields.map(f => ({ name: f.name, value: null, confidence: 0 })),
-          sources: [],
-          error: errorMsg,
-        };
-      }
+      return {
+        recordId: record.id,
+        success: false,
+        fields: targetFields.map(f => ({ name: f.name, value: null, confidence: 0 })),
+        sources: [],
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -254,87 +249,43 @@ export class Gemini3ContactEnrichmentAgent {
    * Enrich using Firecrawl fallback
    */
   private async enrichWithFirecrawl(
-    record: TableRecord,
+    websiteUrl: string,
     targetFields: EnrichmentField[],
-    onProgress?: ProgressCallback
+    recordName: string
   ): Promise<{ fields: FieldWithConfidence[]; sources: SourceAttribution[] }> {
     
-    console.log(`[Contact Enrichment] Using Firecrawl fallback...`);
+    console.log(`[Contact Enrichment] Using Firecrawl for ${recordName}...`);
     
-    // Strategy 1: Try website URL if available
-    const data = record.data || {};
-    const websiteUrl = data.website || data.url || data.ウェブサイト;
-    
-    if (websiteUrl) {
-      onProgress?.(`Scraping ${websiteUrl}...`, 'info');
-      
-      try {
-        const scraped = await this.firecrawl.scrape({
-          url: websiteUrl,
-          formats: ['markdown'],
-          onlyMainContent: true,
-        });
-        
-        const extracted = await this.gemini3.extractFieldsFromContent(
-          scraped.markdown,
-          targetFields,
-          websiteUrl
-        );
-        
-        const fields: FieldWithConfidence[] = targetFields.map(field => ({
-          name: field.name,
-          value: extracted.data[field.name] || null,
-          confidence: extracted.data[field.name] ? 0.75 : 0,
-        }));
-        
-        const sources: SourceAttribution[] = extracted.sources;
-        
-        return { fields, sources };
-      } catch (error) {
-        console.error(`[Contact Enrichment] Firecrawl scrape failed:`, error);
-      }
+    if (!websiteUrl) {
+      throw new Error('No website URL provided');
     }
-    
-    // Strategy 2: Search by company name
-    const companyName = record.company || record.name;
-    if (companyName) {
-      onProgress?.(`Searching for ${companyName}...`, 'info');
+
+    try {
+      const scraped = await this.firecrawl.scrape({
+        url: websiteUrl,
+        formats: ['markdown'],
+        onlyMainContent: true,
+      });
       
-      try {
-        const searchResults = await this.firecrawl.search({
-          query: `"${companyName}" (特定商取引法 OR 会社概要 OR 運営者情報)`,
-          limit: 1,
-        });
-        
-        if (searchResults.length > 0) {
-          const extracted = await this.gemini3.extractFieldsFromContent(
-            searchResults[0].markdown,
-            targetFields,
-            searchResults[0].url
-          );
-          
-          const fields: FieldWithConfidence[] = targetFields.map(field => ({
-            name: field.name,
-            value: extracted.data[field.name] || null,
-            confidence: extracted.data[field.name] ? 0.75 : 0,
-          }));
-          
-          const sources: SourceAttribution[] = extracted.sources;
-          
-          return { fields, sources };
-        }
-      } catch (error) {
-        console.error(`[Contact Enrichment] Firecrawl search failed:`, error);
-      }
+      const extracted = await this.gemini3.extractFieldsFromContent(
+        scraped.markdown,
+        targetFields,
+        websiteUrl
+      );
+      
+      const fields: FieldWithConfidence[] = targetFields.map(field => ({
+        name: field.name,
+        value: extracted.data[field.name] || null,
+        confidence: extracted.data[field.name] ? 0.75 : 0,
+      }));
+      
+      const sources: SourceAttribution[] = extracted.sources;
+      
+      return { fields, sources };
+    } catch (error) {
+      console.error(`[Contact Enrichment] Firecrawl scrape failed for ${websiteUrl}:`, error);
+      throw error;
     }
-    
-    // Strategy 3: Give up
-    console.log(`[Contact Enrichment] No enrichment source available`);
-    
-    return {
-      fields: targetFields.map(f => ({ name: f.name, value: null, confidence: 0 })),
-      sources: [],
-    };
   }
 
   /**
