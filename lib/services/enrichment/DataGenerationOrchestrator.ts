@@ -1,25 +1,25 @@
 /**
  * Data Generation Orchestrator
- * Main orchestrator that coordinates the entire data generation process
+ * Main orchestrator using Gemini 3 hybrid approach:
+ * Phase 1: Instant knowledge extraction
+ * Phase 2: Targeted enrichment for missing fields
  */
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { AgentOrchestrator } from './AgentOrchestrator';
-import { EnrichmentRequirements, GeneratedRecord, ProgressUpdate } from './types';
+import { Gemini3KnowledgeAgent } from './agents/Gemini3KnowledgeAgent';
+import { Gemini3EnrichmentAgent } from './agents/Gemini3EnrichmentAgent';
+import { EnrichmentRequirements, GeneratedRecord, ProgressUpdate, SourceAttribution } from './types';
 
 export class DataGenerationOrchestrator {
-  private agentOrchestrator: AgentOrchestrator;
+  private knowledgeAgent: Gemini3KnowledgeAgent;
+  private enrichmentAgent: Gemini3EnrichmentAgent;
 
   constructor(
     firecrawlApiKey: string,
-    geminiApiKey: string,
-    serpApiKey?: string
+    geminiApiKey: string
   ) {
-    this.agentOrchestrator = new AgentOrchestrator(
-      firecrawlApiKey,
-      geminiApiKey,
-      serpApiKey
-    );
+    this.knowledgeAgent = new Gemini3KnowledgeAgent(geminiApiKey);
+    this.enrichmentAgent = new Gemini3EnrichmentAgent(geminiApiKey, firecrawlApiKey);
   }
 
   /**
@@ -42,11 +42,12 @@ export class DataGenerationOrchestrator {
     );
 
     try {
-      // Update job status to processing
+      // Update job status to processing with knowledge_extraction stage
       await supabase
         .from('ai_generation_jobs')
         .update({
           status: 'processing',
+          stage: 'knowledge_extraction',
           started_at: new Date().toISOString(),
         })
         .eq('id', jobId);
@@ -63,11 +64,19 @@ export class DataGenerationOrchestrator {
         });
       }
 
-      // Generate records using batch discovery
+      // Prepare fields
+      const fields = requirements.targetColumns.map(colName => ({
+        name: colName,
+        displayName: colName,
+        description: `Field: ${colName}`,
+        type: 'string' as const,
+        required: false,
+      }));
+
       let completedCount = 0;
       let failedCount = 0;
 
-      // Send progress update for batch discovery
+      // Phase 1: Knowledge Extraction (instant)
       if (onProgress) {
         onProgress({
           jobId,
@@ -75,29 +84,22 @@ export class DataGenerationOrchestrator {
           completedRecords: 0,
           failedRecords: 0,
           status: 'processing',
-          message: `Batch discovering ${requirements.rowCount} companies...`,
+          message: 'Phase 1: Extracting knowledge from Gemini 3...',
         });
       }
 
-      // Use batch discovery to find all companies at once
-      const records = await this.agentOrchestrator.generateRecordsBatch(
-        requirements.rowCount,
+      const companies = await this.knowledgeAgent.execute(
         requirements.dataType,
         requirements.specifications,
-        requirements.targetColumns.map(colName => ({
-          name: colName,
-          displayName: colName,
-          description: `Field: ${colName}`,
-          type: 'string',
-          required: false,
-        })),
+        requirements.rowCount,
+        fields,
         (message, type) => {
           if (onProgress) {
             onProgress({
               jobId,
               totalRecords: requirements.rowCount,
-              completedRecords: completedCount,
-              failedRecords: failedCount,
+              completedRecords: 0,
+              failedRecords: 0,
               status: 'processing',
               message,
             });
@@ -105,10 +107,124 @@ export class DataGenerationOrchestrator {
         }
       );
 
+      if (companies.length === 0) {
+        throw new Error('No companies found matching criteria');
+      }
+
+      // Save initial knowledge results to DB so frontend can see them immediately
+      for (let i = 0; i < companies.length; i++) {
+        const company = companies[i];
+        const data: Record<string, any> = {};
+        company.fields.forEach(field => {
+          if (field.value !== null) {
+            data[field.name] = field.value;
+          }
+        });
+
+        // Save as "pending" record
+        await this.saveGeneratedRecord(jobId, {
+          index: i,
+          data,
+          sources: company.fields
+            .filter(f => f.value !== null && f.confidence >= 0.80)
+            .map(f => ({
+              field: f.name,
+              url: 'gemini_knowledge',
+              confidence: f.confidence,
+            })),
+          status: 'pending', // Mark as pending enrichment
+        });
+      }
+
+      // Update stage to enrichment and mark knowledge phase complete
+      await supabase
+        .from('ai_generation_jobs')
+        .update({
+          stage: 'enrichment',
+        })
+        .eq('id', jobId);
+
+      // Phase 2: Targeted Enrichment (only for low-confidence fields)
+      if (onProgress) {
+        onProgress({
+          jobId,
+          totalRecords: requirements.rowCount,
+          completedRecords: 0,
+          failedRecords: 0,
+          status: 'processing',
+          message: 'Phase 2: Enriching missing fields...',
+        });
+      }
+
+      const records: GeneratedRecord[] = [];
+
+      for (let i = 0; i < companies.length; i++) {
+        const company = companies[i];
+
+        try {
+          // Enrich missing fields
+          const enriched = await this.enrichmentAgent.execute(
+            company,
+            fields,
+            (message, type) => {
+              if (onProgress) {
+                onProgress({
+                  jobId,
+                  totalRecords: requirements.rowCount,
+                  completedRecords: i,
+                  failedRecords: failedCount,
+                  status: 'processing',
+                  currentRecord: i + 1,
+                  message,
+                });
+              }
+            }
+          );
+
+          // Convert to GeneratedRecord format
+          const data: Record<string, any> = {};
+          enriched.fields.forEach(field => {
+            data[field.name] = field.value;
+          });
+
+          records.push({
+            index: i,
+            data,
+            sources: enriched.sources,
+            status: 'success',
+          });
+
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`[DataGeneration] Error enriching company ${i + 1}:`, errorMsg);
+
+          // Still include partial data from knowledge extraction
+          const data: Record<string, any> = {};
+          company.fields.forEach(field => {
+            if (field.value !== null) {
+              data[field.name] = field.value;
+            }
+          });
+
+          records.push({
+            index: i,
+            data,
+            sources: company.fields
+              .filter(f => f.value !== null && f.confidence >= 0.80)
+              .map(f => ({
+                field: f.name,
+                url: 'gemini_knowledge',
+                confidence: f.confidence,
+              })),
+            status: 'success', // Mark as success since we have partial data
+          });
+        }
+      }
+
       // Process each generated record
       for (let i = 0; i < records.length; i++) {
         const record = records[i];
-        
+
         try {
           // Send progress update
           if (onProgress) {
@@ -151,11 +267,11 @@ export class DataGenerationOrchestrator {
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           console.error(`[DataGeneration] Error saving record ${i + 1}:`, errorMessage);
-          
+
           // Check if it's a critical error that should stop the entire job
           if (errorMessage.includes('Insufficient Firecrawl credits')) {
             console.error(`[DataGeneration] Critical error: ${errorMessage}. Stopping job.`);
-            
+
             // Mark job as failed
             await supabase
               .from('ai_generation_jobs')
@@ -167,10 +283,10 @@ export class DataGenerationOrchestrator {
                 failed_records: failedCount + (records.length - i),
               })
               .eq('id', jobId);
-            
+
             throw error; // Stop the entire job
           }
-          
+
           failedCount++;
 
           // Save failed record
@@ -194,6 +310,7 @@ export class DataGenerationOrchestrator {
         .from('ai_generation_jobs')
         .update({
           status: 'completed',
+          stage: 'completed',
           completed_at: new Date().toISOString(),
           completed_records: completedCount,
           failed_records: failedCount,
@@ -222,6 +339,7 @@ export class DataGenerationOrchestrator {
         .from('ai_generation_jobs')
         .update({
           status: 'failed',
+          stage: 'failed',
           completed_at: new Date().toISOString(),
           error_message: error instanceof Error ? error.message : 'Unknown error',
         })

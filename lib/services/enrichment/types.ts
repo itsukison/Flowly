@@ -37,7 +37,7 @@ export interface GeneratedRecord {
   index: number;
   data: Record<string, any>;
   sources: SourceAttribution[];
-  status: 'success' | 'failed';
+  status: 'success' | 'failed' | 'pending';
   error?: string;
 }
 
@@ -50,6 +50,14 @@ export interface ProgressUpdate {
   currentRecord?: number;
   message?: string;
   error?: string;
+  stage?: 'knowledge_extraction' | 'enrichment' | 'complete';
+  company?: string;
+  field?: string;
+  progress?: {
+    current: number;
+    total: number;
+    percentage: number;
+  };
 }
 
 export interface AgentContext {

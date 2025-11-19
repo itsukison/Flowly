@@ -57,6 +57,7 @@ export async function GET(
     return NextResponse.json({
       sessionId,
       status: job.status,
+      stage: job.stage || 'pending',
       totalRecords: job.total_records,
       completedRecords: job.completed_records || 0,
       failedRecords: job.failed_records || 0,

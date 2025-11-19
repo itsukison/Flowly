@@ -122,7 +122,6 @@ export async function POST(request: NextRequest) {
     // Start generation in background
     const firecrawlKey = process.env.FIRECRAWL_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
-    const serpApiKey = process.env.SERP_API_KEY;
 
     if (!firecrawlKey || !geminiKey) {
       const missingKeys = [];
@@ -148,21 +147,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Warn if SerpAPI key is missing (will use fallback)
-    if (!serpApiKey) {
-      console.warn('[Generate] SERP_API_KEY not found - will use Firecrawl search fallback');
-    }
-
     // Start generation in background
     try {
       console.log('[Generate] Importing DataGenerationOrchestrator...');
       const { DataGenerationOrchestrator } = await import('@/lib/services/enrichment/DataGenerationOrchestrator');
       
-      console.log('[Generate] Creating orchestrator instance...');
+      console.log('[Generate] Creating orchestrator instance (Gemini 3 hybrid)...');
       const orchestrator = new DataGenerationOrchestrator(
         firecrawlKey,
-        geminiKey,
-        serpApiKey
+        geminiKey
       );
       
       console.log('[Generate] Starting background generation...');
