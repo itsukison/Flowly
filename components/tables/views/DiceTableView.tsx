@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
 import { DataGridSortMenu } from "@/components/data-grid/data-grid-sort-menu";
 import { useDataGrid } from "@/hooks/use-data-grid";
+import { useUndoRedo } from "@/hooks/use-undo-redo";
 import { DeduplicationModal } from "@/components/tables/modals/DeduplicationModal";
 import { ContactEnrichmentModal } from "@/components/tables/modals/ContactEnrichmentModal";
 import { AIChatModal } from "@/components/tables/modals/AIChatModal";
 import { EditColumnModal } from "@/components/tables/modals/EditColumnModal";
 import { AddColumnModal } from "@/components/tables/modals/AddColumnModal";
+import AddRecordModalWithImport from "@/components/tables/modals/AddRecordModalWithImport";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/dashboard/Sidebar";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -66,6 +68,8 @@ interface DiceTableViewProps {
   columns: Column[];
   statuses: Status[];
   records: TableRecord[];
+  totalRecords?: number;
+  pageSize?: number;
 }
 
 export default function DiceTableView({
@@ -73,21 +77,29 @@ export default function DiceTableView({
   columns,
   statuses,
   records,
+  totalRecords = 0,
+  pageSize = 100,
 }: DiceTableViewProps) {
   const router = useRouter();
   const { isCollapsed, toggleCollapse } = useSidebar();
 
+  // Pagination state - must be before normalizedRecords
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [allRecords, setAllRecords] = useState<TableRecord[]>(records);
+  const hasMore = totalRecords > allRecords.length;
+
   // Normalize records to ensure data field exists
   const normalizedRecords = useMemo<NormalizedTableRecord[]>(() => {
-    return records.map((record) => ({
+    return allRecords.map((record) => ({
       ...record,
       data: (record.data as Record<string, any>) || {},
     }));
-  }, [records]);
+  }, [allRecords]);
 
   // Add empty placeholder rows (like Excel) to fill the screen
   const dataWithPlaceholders = useMemo<NormalizedTableRecord[]>(() => {
-    const PLACEHOLDER_COUNT = 200;
+    const PLACEHOLDER_COUNT = 50; // Reduced from 200 for better performance
     const placeholders: NormalizedTableRecord[] = [];
     
     for (let i = 0; i < PLACEHOLDER_COUNT; i++) {
@@ -103,6 +115,23 @@ export default function DiceTableView({
   }, [normalizedRecords, table.id]);
 
   const [data, setData] = useState(dataWithPlaceholders);
+
+  // Undo/Redo functionality
+  const {
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    pushHistory,
+  } = useUndoRedo({
+    initialData: dataWithPlaceholders,
+    maxHistorySize: 50,
+    onRestore: (restoredData) => {
+      setData(restoredData);
+      // Note: We don't save to database on undo/redo
+      // The user can make further edits and those will be saved
+    },
+  });
 
   // Update data when records change (e.g., after refresh)
   useEffect(() => {
@@ -122,6 +151,42 @@ export default function DiceTableView({
   const [isEditColumnOpen, setIsEditColumnOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<{ id: string; label: string } | null>(null);
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+  const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
+
+  // Debounced batch save refs
+  const pendingChanges = useRef<Map<string, any>>(new Map());
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Incremental change detection - track dirty cells
+  type CellKey = `${string}-${string}`; // `${recordId}-${columnId}`
+  const dirtyCells = useRef<Set<CellKey>>(new Set());
+  const originalValues = useRef<Map<CellKey, any>>(new Map());
+
+  // Load more records
+  const loadMoreRecords = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const response = await fetch(
+        `/api/records/paginated?tableId=${table.id}&page=${nextPage}&pageSize=${pageSize}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load more records");
+      }
+
+      const { records: newRecords } = await response.json();
+      setAllRecords((prev) => [...prev, ...newRecords]);
+      setCurrentPage(nextPage);
+    } catch (error) {
+      console.error("Error loading more records:", error);
+      alert("レコードの読み込みに失敗しました");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [currentPage, hasMore, isLoadingMore, table.id, pageSize]);
 
   // Set table context for sidebar
   useEffect(() => {
@@ -194,9 +259,21 @@ export default function DiceTableView({
     return !hasDirectData && !hasJsonbData;
   }, []);
 
-  // Handle data changes with auto-save
+  // Mark cell as dirty for incremental change detection
+  const markCellDirty = useCallback((recordId: string, columnId: string, oldValue: any) => {
+    const key: CellKey = `${recordId}-${columnId}`;
+    
+    // Store original value if first edit
+    if (!dirtyCells.current.has(key)) {
+      originalValues.current.set(key, oldValue);
+    }
+    
+    dirtyCells.current.add(key);
+  }, []);
+
+  // Handle data changes with debounced batch save
   const handleDataChange = useCallback(
-    async (newData: NormalizedTableRecord[]) => {
+    (newData: NormalizedTableRecord[]) => {
       // FIX: The built-in onDataUpdate puts JSONB fields at the wrong level
       // It does: updatedRow[columnId] = value
       // But for JSONB fields, we need: updatedRow.data[columnId] = value
@@ -268,6 +345,8 @@ export default function DiceTableView({
         directFields.forEach((field) => {
           const oldValue = (oldRecord as any)[field];
           const newValue = (newRecord as any)[field];
+          // Skip if both are empty/null/undefined
+          if (!oldValue && !newValue) return;
           if (oldValue !== newValue) {
             directChanges[field] = newValue;
             hasDirectChanges = true;
@@ -282,8 +361,14 @@ export default function DiceTableView({
         const newDataObj = newRecord.data || {};
 
         Object.keys(newDataObj).forEach((key) => {
-          if (oldData[key] !== newDataObj[key]) {
-            dataChanges[key] = newDataObj[key];
+          const oldValue = oldData[key];
+          const newValue = newDataObj[key];
+          
+          // Skip if both are empty/null/undefined (especially for virtual columns)
+          if (!oldValue && !newValue) return;
+          
+          if (oldValue !== newValue) {
+            dataChanges[key] = newValue;
             hasDataChanges = true;
           }
         });
@@ -297,66 +382,58 @@ export default function DiceTableView({
         }
       });
 
-      // Update local state immediately for responsive UI with fixed data
+      // Update local state immediately for optimistic UI (instant feedback)
       setData(fixedData);
-
-      // Save changes to API (both updates and new records)
+      
+      // Push to history for undo/redo (only if there are actual changes)
       if (updates.length > 0 || newRecordsToCreate.length > 0) {
-        setIsSaving(true);
-        setSaveStatus("saving");
+        pushHistory(fixedData);
+      }
 
-        try {
-          // Create new records from placeholder rows
-          const createdRecords = await Promise.all(
-            newRecordsToCreate.map(async ({ record, index }) => {
-              const organizationId = normalizedRecords[0]?.organization_id;
-              if (!organizationId) {
-                throw new Error("Organization ID not found");
-              }
+      // Add changes to pending queue
+      updates.forEach(({ record, changes }) => {
+        const existing = pendingChanges.current.get(record.id) || {};
+        pendingChanges.current.set(record.id, { ...existing, ...changes });
+      });
 
-              const payload: any = {
-                table_id: table.id,
-                organization_id: organizationId,
-                status: record.status || statuses[0]?.name || null,
-                data: record.data || {},
-              };
+      // Handle new records immediately (can't batch these)
+      if (newRecordsToCreate.length > 0) {
+        (async () => {
+          try {
+            const createdRecords = await Promise.all(
+              newRecordsToCreate.map(async ({ record, index }) => {
+                const organizationId = normalizedRecords[0]?.organization_id;
+                if (!organizationId) {
+                  throw new Error("Organization ID not found");
+                }
 
-              // Add direct fields if they exist
-              if (record.name) payload.name = record.name;
-              if (record.email) payload.email = record.email;
-              if (record.company) payload.company = record.company;
+                const payload: any = {
+                  table_id: table.id,
+                  organization_id: organizationId,
+                  status: record.status || statuses[0]?.name || null,
+                  data: record.data || {},
+                };
 
-              const response = await fetch(`/api/records`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-              });
+                if (record.name) payload.name = record.name;
+                if (record.email) payload.email = record.email;
+                if (record.company) payload.company = record.company;
 
-              if (!response.ok) {
-                throw new Error("Failed to create record");
-              }
+                const response = await fetch(`/api/records`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
 
-              const newRecord = await response.json();
-              return { index, newRecord };
-            })
-          );
+                if (!response.ok) {
+                  throw new Error("Failed to create record");
+                }
 
-          // Update existing records
-          await Promise.all(
-            updates.map(({ record, changes }) =>
-              fetch(`/api/records/${record.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(changes),
-              }).then((res) => {
-                if (!res.ok) throw new Error("Failed to save");
-                return res.json();
+                const newRecord = await response.json();
+                return { index, newRecord };
               })
-            )
-          );
+            );
 
-          // Replace placeholder rows with real records in state
-          if (createdRecords.length > 0) {
+            // Replace placeholder rows with real records
             setData((currentData) => {
               const updated = [...currentData];
               createdRecords.forEach(({ index, newRecord }) => {
@@ -367,18 +444,53 @@ export default function DiceTableView({
               });
               return updated;
             });
+          } catch (error) {
+            console.error("Error creating records:", error);
+            alert("レコードの作成に失敗しました");
           }
+        })();
+      }
 
-          setSaveStatus("saved");
-          setTimeout(() => setSaveStatus("idle"), 2000);
-        } catch (error) {
-          console.error("Error saving changes:", error);
-          setSaveStatus("error");
-          setTimeout(() => setSaveStatus("idle"), 3000);
-          alert("変更の保存に失敗しました");
-        } finally {
-          setIsSaving(false);
+      // Debounce + batch save for updates (500ms after last change)
+      if (updates.length > 0) {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
         }
+
+        saveTimeoutRef.current = setTimeout(async () => {
+          if (pendingChanges.current.size === 0) return;
+
+          setIsSaving(true);
+          setSaveStatus("saving");
+
+          const batchUpdates = Array.from(pendingChanges.current.entries()).map(
+            ([id, changes]) => ({ id, changes })
+          );
+
+          try {
+            // Single batch API call
+            const response = await fetch('/api/records/batch', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ updates: batchUpdates }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to batch save');
+            }
+
+            pendingChanges.current.clear();
+            setSaveStatus("saved");
+            setTimeout(() => setSaveStatus("idle"), 2000);
+          } catch (error) {
+            console.error("Error batch saving:", error);
+            setSaveStatus("error");
+            setTimeout(() => setSaveStatus("idle"), 3000);
+            alert("変更の保存に失敗しました");
+          } finally {
+            setIsSaving(false);
+          }
+        }, 500); // 500ms debounce
       }
     },
     [data, columns, normalizedRecords, table.id, statuses, isRowEmpty]
@@ -510,6 +622,52 @@ export default function DiceTableView({
     setIsAddColumnOpen(true);
   }, []);
 
+  // Handle column reordering
+  const handleColumnReorder = useCallback(async (sourceColumnId: string, targetColumnId: string) => {
+    // Don't reorder virtual columns or special columns
+    if (sourceColumnId.startsWith('col_') || targetColumnId.startsWith('col_')) return;
+    if (sourceColumnId === 'select' || sourceColumnId === 'status') return;
+    if (targetColumnId === 'select' || targetColumnId === 'status') return;
+
+    // Find the source and target columns
+    const sourceColumn = columns.find(col => col.name === sourceColumnId);
+    const targetColumn = columns.find(col => col.name === targetColumnId);
+
+    if (!sourceColumn || !targetColumn) return;
+
+    // Create new column order
+    const newColumns = [...columns];
+    const sourceIndex = newColumns.findIndex(col => col.id === sourceColumn.id);
+    const targetIndex = newColumns.findIndex(col => col.id === targetColumn.id);
+
+    // Remove source and insert at target position
+    const [removed] = newColumns.splice(sourceIndex, 1);
+    newColumns.splice(targetIndex, 0, removed);
+
+    // Update display_order for all affected columns
+    const updates = newColumns.map((col, index) => ({
+      id: col.id,
+      display_order: index,
+    }));
+
+    try {
+      const response = await fetch('/api/columns/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reorder columns');
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error reordering columns:', error);
+      alert('列の並び替えに失敗しました');
+    }
+  }, [columns, router]);
+
   // Handle saving new column
   const handleSaveNewColumn = useCallback(async (columnData: {
     table_id: string;
@@ -535,6 +693,53 @@ export default function DiceTableView({
       throw error;
     }
   }, [router]);
+
+  // Handle CSV Export
+  const handleExportCSV = useCallback(async () => {
+    try {
+      const XLSX = await import('xlsx');
+      
+      // Prepare headers
+      const headers = columns.map(col => col.label);
+      headers.push('ステータス'); // Add status column
+
+      // Prepare data rows
+      const rows = normalizedRecords.map(record => {
+        const row: any[] = [];
+        
+        columns.forEach(column => {
+          const isDirectProperty = ['name', 'email', 'company'].includes(column.name);
+          const value = isDirectProperty 
+            ? (record as any)[column.name] 
+            : record.data?.[column.name];
+          row.push(value ?? '');
+        });
+        
+        // Add status
+        row.push(record.status ?? '');
+        
+        return row;
+      });
+
+      // Create worksheet
+      const wsData = [headers, ...rows];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `${table.name}_${timestamp}.csv`;
+      
+      // Download
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('CSVのエクスポートに失敗しました');
+    }
+  }, [columns, normalizedRecords, table.name]);
 
   // Handle deduplication confirmation
   const handleDeduplicationConfirm = useCallback(
@@ -692,6 +897,28 @@ export default function DiceTableView({
       },
     });
 
+    // Add 20 virtual columns with empty headers
+    // Users can add more columns manually if needed
+    for (let i = 0; i < 20; i++) {
+      const columnKey = `col_${i}`;
+      
+      cols.push({
+        id: columnKey,
+        accessorFn: (row: NormalizedTableRecord) =>
+          row.data?.[columnKey] ?? "",
+        header: "", // Empty header
+        enableSorting: false, // Disable sorting for virtual columns to improve performance
+        size: 120,
+        meta: {
+          label: "",
+          isVirtual: true,
+          cell: {
+            variant: "short-text",
+          },
+        },
+      });
+    }
+
     return cols;
   }, [columns, statuses]);
 
@@ -702,6 +929,8 @@ export default function DiceTableView({
     onDataChange: handleDataChange,
     onRowAdd: handleRowAdd,
     onRowsDelete: handleRowsDelete,
+    onUndo: undo,
+    onRedo: redo,
     enableSearch: true,
     autoFocus: true,
     getRowId: (row) => row.id,
@@ -772,6 +1001,48 @@ export default function DiceTableView({
             <h1 className="text-sm font-semibold text-[#09090B]">
               {table.name}
             </h1>
+            
+            {/* Export Button - Icon only, text on hover */}
+            <button
+              onClick={handleExportCSV}
+              className="group p-1.5 hover:bg-[#F4F4F5] rounded-lg transition-colors relative"
+              title="CSVエクスポート"
+            >
+              <svg className="w-4 h-4 text-[#71717B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                エクスポート
+              </span>
+            </button>
+            
+            {/* Undo/Redo buttons - moved here with reduced spacing */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={undo}
+              disabled={!canUndo}
+              title="元に戻す (Ctrl+Z)"
+              className="h-7 w-7 p-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={redo}
+              disabled={!canRedo}
+              title="やり直す (Ctrl+Shift+Z)"
+              className="h-7 w-7 p-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+              </svg>
+            </Button>
+            
             {isSaving && (
               <div className="flex items-center gap-2 text-xs text-[#71717B]">
                 <svg
@@ -835,6 +1106,19 @@ export default function DiceTableView({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* Add Record Button - opens modal with import/enrichment options */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddRecordOpen(true)}
+              className="gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              レコードを追加
+            </Button>
+            
             <DataGridSortMenu table={dataGridTable} />
             <Button
               variant="outline"
@@ -945,14 +1229,60 @@ export default function DiceTableView({
         </div>
 
         {/* Scrollable Table Container - Takes remaining space */}
-        <div className="flex-1 overflow-hidden">
-          <DataGrid 
-            table={dataGridTable} 
-            {...dataGridProps}
-            onEditColumn={handleEditColumn}
-            onDeleteColumn={handleDeleteColumn}
-            onAddColumn={handleAddColumn}
-          />
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden">
+            <DataGrid 
+              table={dataGridTable} 
+              {...dataGridProps}
+              onEditColumn={handleEditColumn}
+              onDeleteColumn={handleDeleteColumn}
+              onAddColumn={handleAddColumn}
+              onColumnReorder={handleColumnReorder}
+            />
+          </div>
+          
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="border-t border-[#E4E4E7] p-3 bg-white">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadMoreRecords}
+                disabled={isLoadingMore}
+                className="w-full"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    読み込み中...
+                  </>
+                ) : (
+                  <>
+                    さらに読み込む ({allRecords.length} / {totalRecords})
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Keyboard Shortcuts Dialog */}
@@ -1023,6 +1353,27 @@ export default function DiceTableView({
         displayOrder={columns.length}
         onAdd={handleSaveNewColumn}
       />
+
+      {/* Add Record Modal with Import/Enrichment */}
+      {isAddRecordOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            onClick={() => setIsAddRecordOpen(false)}
+          />
+          <AddRecordModalWithImport
+            tableId={table.id}
+            tableName={table.name}
+            columns={columns}
+            statuses={statuses}
+            organizationId={normalizedRecords[0]?.organization_id || ''}
+            onClose={() => {
+              setIsAddRecordOpen(false);
+              router.refresh();
+            }}
+          />
+        </>
+      )}
     </>
   );
 }

@@ -31,6 +31,29 @@ export function DataGridCellWrapper<TData>({
   const isSearchMatch = meta?.getIsSearchMatch?.(rowIndex, columnId) ?? false;
   const isActiveSearchMatch =
     meta?.getIsActiveSearchMatch?.(rowIndex, columnId) ?? false;
+  const isFillTarget = meta?.getIsFillTarget?.(rowIndex, columnId) ?? false;
+
+  const onFillHandleMouseDown = React.useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      meta?.onFillHandleMouseDown?.(rowIndex, columnId, event);
+    },
+    [meta, rowIndex, columnId],
+  );
+
+  const onMouseEnterForFill = React.useCallback(
+    (event: React.MouseEvent) => {
+      if (!isEditing) {
+        meta?.onCellMouseEnter?.(rowIndex, columnId, event);
+        // Also notify fill handle if filling is active
+        if (meta?.fillHandleState?.isFilling) {
+          meta?.onFillHandleMouseEnter?.(rowIndex, columnId);
+        }
+      }
+    },
+    [meta, rowIndex, columnId, isEditing],
+  );
 
   const onClick = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -65,14 +88,7 @@ export function DataGridCellWrapper<TData>({
     [meta, rowIndex, columnId, isEditing],
   );
 
-  const onMouseEnter = React.useCallback(
-    (event: React.MouseEvent) => {
-      if (!isEditing) {
-        meta?.onCellMouseEnter?.(rowIndex, columnId, event);
-      }
-    },
-    [meta, rowIndex, columnId, isEditing],
-  );
+
 
   const onMouseUp = React.useCallback(() => {
     if (!isEditing) {
@@ -146,13 +162,14 @@ export function DataGridCellWrapper<TData>({
       data-selected={isSelected ? "" : undefined}
       tabIndex={isFocused && !isEditing ? 0 : -1}
       className={cn(
-        "size-full px-2 py-1.5 text-left text-sm outline-none has-data-[slot=checkbox]:pt-2.5",
+        "relative size-full px-2 py-1.5 text-left text-sm outline-none has-data-[slot=checkbox]:pt-2.5",
         {
           "ring-1 ring-ring ring-inset": isFocused,
           "bg-yellow-100 dark:bg-yellow-900/30":
             isSearchMatch && !isActiveSearchMatch,
           "bg-orange-200 dark:bg-orange-900/50": isActiveSearchMatch,
           "bg-primary/10": isSelected && !isEditing,
+          "bg-blue-100 dark:bg-blue-900/30": isFillTarget && !isEditing,
           "cursor-default": !isEditing,
           "**:data-[slot=grid-cell-content]:line-clamp-1":
             !isEditing && rowHeight === "short",
@@ -169,10 +186,22 @@ export function DataGridCellWrapper<TData>({
       onContextMenu={onContextMenu}
       onDoubleClick={onDoubleClick}
       onMouseDown={onMouseDown}
-      onMouseEnter={onMouseEnter}
+      onMouseEnter={onMouseEnterForFill}
       onMouseUp={onMouseUp}
       onKeyDown={onKeyDown}
       {...props}
-    />
+    >
+      {props.children}
+      
+      {/* Fill Handle - only show on focused cell when not editing */}
+      {isFocused && !isEditing && !isSelected && (
+        <div
+          className="absolute bottom-0 right-0 w-2 h-2 bg-primary border border-white cursor-crosshair z-10"
+          style={{ transform: 'translate(50%, 50%)' }}
+          onMouseDown={onFillHandleMouseDown}
+          title="ドラッグして値を入力"
+        />
+      )}
+    </div>
   );
 }

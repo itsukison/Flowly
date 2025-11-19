@@ -71,6 +71,7 @@ interface DataGridColumnHeaderProps<TData, TValue>
   table: Table<TData>;
   onEditColumn?: (columnId: string, currentLabel: string) => void;
   onDeleteColumn?: (columnId: string, columnLabel: string) => void;
+  onColumnReorder?: (sourceColumnId: string, targetColumnId: string) => void;
 }
 
 export function DataGridColumnHeader<TData, TValue>({
@@ -80,6 +81,7 @@ export function DataGridColumnHeader<TData, TValue>({
   onPointerDown,
   onEditColumn,
   onDeleteColumn,
+  onColumnReorder,
   ...props
 }: DataGridColumnHeaderProps<TData, TValue>) {
   const column = header.column;
@@ -91,6 +93,9 @@ export function DataGridColumnHeader<TData, TValue>({
 
   const isAnyColumnResizing =
     table.getState().columnSizingInfo.isResizingColumn;
+
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDropTarget, setIsDropTarget] = React.useState(false);
 
   const cellVariant = column.columnDef.meta?.cell;
   const columnVariant = getColumnVariant(cellVariant?.variant);
@@ -165,13 +170,58 @@ export function DataGridColumnHeader<TData, TValue>({
   const isSpecialColumn = column.id === "select" || column.id === "status";
   const canEditDelete = !isSpecialColumn && (onEditColumn || onDeleteColumn);
 
+  // Drag and drop handlers
+  const canDrag = !column.getIsPinned() && onColumnReorder;
+
+  const handleDragStart = React.useCallback((e: React.DragEvent) => {
+    if (!canDrag) return;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", column.id);
+    setIsDragging(true);
+  }, [canDrag, column.id]);
+
+  const handleDragEnd = React.useCallback(() => {
+    setIsDragging(false);
+    setIsDropTarget(false);
+  }, []);
+
+  const handleDragOver = React.useCallback((e: React.DragEvent) => {
+    if (!canDrag) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDropTarget(true);
+  }, [canDrag]);
+
+  const handleDragLeave = React.useCallback(() => {
+    setIsDropTarget(false);
+  }, []);
+
+  const handleDrop = React.useCallback((e: React.DragEvent) => {
+    if (!canDrag) return;
+    e.preventDefault();
+    const sourceColumnId = e.dataTransfer.getData("text/plain");
+    if (sourceColumnId && sourceColumnId !== column.id) {
+      onColumnReorder?.(sourceColumnId, column.id);
+    }
+    setIsDropTarget(false);
+  }, [canDrag, column.id, onColumnReorder]);
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
+          draggable={canDrag}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           className={cn(
             "flex h-9 w-full items-center justify-between gap-1 px-2 text-xs hover:bg-accent/40 data-[state=open]:bg-accent/40 [&_svg]:size-3",
             isAnyColumnResizing && "pointer-events-none",
+            isDragging && "opacity-50",
+            isDropTarget && "border-l-2 border-blue-500",
+            canDrag && "cursor-move",
             className
           )}
           onPointerDown={onTriggerPointerDown}

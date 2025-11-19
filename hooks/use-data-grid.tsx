@@ -67,6 +67,11 @@ interface DataGridState {
   searchOpen: boolean;
   lastClickedRowIndex: number | null;
   isScrolling: boolean;
+  fillHandleState: {
+    isFilling: boolean;
+    startCell: CellPosition | null;
+    endCell: CellPosition | null;
+  };
 }
 
 interface DataGridStore {
@@ -107,6 +112,8 @@ interface UseDataGridProps<TData>
   autoFocus?: boolean | Partial<CellPosition>;
   enableColumnSelection?: boolean;
   enableSearch?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 function useDataGrid<TData>({
@@ -121,6 +128,8 @@ function useDataGrid<TData>({
   autoFocus = false,
   enableColumnSelection = false,
   enableSearch = false,
+  onUndo,
+  onRedo,
   ...dataGridProps
 }: UseDataGridProps<TData>) {
   const dataGridRef = React.useRef<HTMLDivElement>(null);
@@ -157,6 +166,11 @@ function useDataGrid<TData>({
       searchOpen: false,
       lastClickedRowIndex: null,
       isScrolling: false,
+      fillHandleState: {
+        isFilling: false,
+        startCell: null,
+        endCell: null,
+      },
     };
   });
 
@@ -226,6 +240,7 @@ function useDataGrid<TData>({
   const contextMenu = useStore(store, (state) => state.contextMenu);
   const rowHeight = useStore(store, (state) => state.rowHeight);
   const isScrolling = useStore(store, (state) => state.isScrolling);
+  const fillHandleState = useStore(store, (state) => state.fillHandleState);
 
   const rowHeightValue = getRowHeightValue(rowHeight);
 
@@ -1000,11 +1015,118 @@ function useDataGrid<TData>({
 
   const onCellMouseUp = React.useCallback(() => {
     const currentState = store.getState();
+    
+    // Handle fill operation completion
+    if (currentState.fillHandleState.isFilling) {
+      const { startCell, endCell } = currentState.fillHandleState;
+      
+      if (startCell && endCell) {
+        // Perform fill operation
+        const currentTable = tableRef.current;
+        const rows = currentTable?.getRowModel().rows ?? [];
+        
+        // Get source cell value
+        const sourceRow = rows[startCell.rowIndex];
+        if (sourceRow) {
+          const sourceCell = sourceRow.getVisibleCells().find(c => c.column.id === startCell.columnId);
+          const sourceValue = sourceCell?.getValue();
+          
+          // Determine fill direction and range
+          const startColIndex = columnIds.indexOf(startCell.columnId);
+          const endColIndex = columnIds.indexOf(endCell.columnId);
+          const minRow = Math.min(startCell.rowIndex, endCell.rowIndex);
+          const maxRow = Math.max(startCell.rowIndex, endCell.rowIndex);
+          const minCol = Math.min(startColIndex, endColIndex);
+          const maxCol = Math.max(startColIndex, endColIndex);
+          
+          // Create updates for all cells in range
+          const updates: UpdateCell[] = [];
+          
+          for (let rowIndex = minRow; rowIndex <= maxRow; rowIndex++) {
+            for (let colIndex = minCol; colIndex <= maxCol; colIndex++) {
+              const columnId = columnIds[colIndex];
+              if (columnId && !(rowIndex === startCell.rowIndex && columnId === startCell.columnId)) {
+                updates.push({
+                  rowIndex,
+                  columnId,
+                  value: sourceValue,
+                });
+              }
+            }
+          }
+          
+          if (updates.length > 0) {
+            onDataUpdate(updates);
+          }
+        }
+      }
+      
+      // Reset fill state
+      store.setState("fillHandleState", {
+        isFilling: false,
+        startCell: null,
+        endCell: null,
+      });
+    }
+    
     store.setState("selectionState", {
       ...currentState.selectionState,
       isSelecting: false,
     });
-  }, [store]);
+  }, [store, columnIds, onDataUpdate]);
+
+  // Fill handle mouse down
+  const onFillHandleMouseDown = React.useCallback(
+    (rowIndex: number, columnId: string, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      store.setState("fillHandleState", {
+        isFilling: true,
+        startCell: { rowIndex, columnId },
+        endCell: { rowIndex, columnId },
+      });
+    },
+    [store],
+  );
+
+  // Fill handle mouse enter (during drag)
+  const onFillHandleMouseEnter = React.useCallback(
+    (rowIndex: number, columnId: string) => {
+      const currentState = store.getState();
+      if (currentState.fillHandleState.isFilling && currentState.fillHandleState.startCell) {
+        store.setState("fillHandleState", {
+          ...currentState.fillHandleState,
+          endCell: { rowIndex, columnId },
+        });
+      }
+    },
+    [store],
+  );
+
+  const getIsFillTarget = React.useCallback(
+    (rowIndex: number, columnId: string) => {
+      const { isFilling, startCell, endCell } = fillHandleState;
+      if (!isFilling || !startCell || !endCell) return false;
+      
+      const startColIndex = columnIds.indexOf(startCell.columnId);
+      const endColIndex = columnIds.indexOf(endCell.columnId);
+      const currentColIndex = columnIds.indexOf(columnId);
+      
+      const minRow = Math.min(startCell.rowIndex, endCell.rowIndex);
+      const maxRow = Math.max(startCell.rowIndex, endCell.rowIndex);
+      const minCol = Math.min(startColIndex, endColIndex);
+      const maxCol = Math.max(startColIndex, endColIndex);
+      
+      return (
+        rowIndex >= minRow &&
+        rowIndex <= maxRow &&
+        currentColIndex >= minCol &&
+        currentColIndex <= maxCol
+      );
+    },
+    [fillHandleState, columnIds],
+  );
 
   const onCellContextMenu = React.useCallback(
     (rowIndex: number, columnId: string, event: React.MouseEvent) => {
@@ -1102,6 +1224,164 @@ function useDataGrid<TData>({
       if (isCtrlPressed && key === "a") {
         event.preventDefault();
         selectAll();
+        return;
+      }
+
+      // Handle Ctrl+Z / Cmd+Z to undo
+      if (isCtrlPressed && key === "z" && !shiftKey) {
+        event.preventDefault();
+        onUndo?.();
+        return;
+      }
+
+      // Handle Ctrl+Shift+Z / Cmd+Shift+Z to redo
+      if (isCtrlPressed && key === "z" && shiftKey) {
+        event.preventDefault();
+        onRedo?.();
+        return;
+      }
+
+      // Handle Ctrl+Y / Cmd+Y to redo (alternative)
+      if (isCtrlPressed && key === "y") {
+        event.preventDefault();
+        onRedo?.();
+        return;
+      }
+
+      // Handle Ctrl+C / Cmd+C to copy selected cells
+      if (isCtrlPressed && key === "c") {
+        event.preventDefault();
+        if (
+          currentState.selectionState.selectedCells &&
+          currentState.selectionState.selectedCells.size > 0
+        ) {
+          const rows = tableRef.current?.getRowModel().rows ?? [];
+          const columnIds: string[] = [];
+
+          const selectedCellsArray = Array.from(
+            currentState.selectionState.selectedCells,
+          );
+          for (const cellKey of selectedCellsArray) {
+            const { columnId } = parseCellKey(cellKey);
+            if (columnId && !columnIds.includes(columnId)) {
+              columnIds.push(columnId);
+            }
+          }
+
+          const cellData = new Map<string, string>();
+          for (const cellKey of selectedCellsArray) {
+            const { rowIndex, columnId } = parseCellKey(cellKey);
+            const row = rows[rowIndex];
+            if (row) {
+              const cell = row
+                .getVisibleCells()
+                .find((c) => c.column.id === columnId);
+              if (cell) {
+                const value = cell.getValue();
+                cellData.set(cellKey, String(value ?? ""));
+              }
+            }
+          }
+
+          const rowIndices = new Set<number>();
+          const colIndices = new Set<number>();
+
+          for (const cellKey of selectedCellsArray) {
+            const { rowIndex, columnId } = parseCellKey(cellKey);
+            rowIndices.add(rowIndex);
+            const colIndex = columnIds.indexOf(columnId);
+            if (colIndex >= 0) {
+              colIndices.add(colIndex);
+            }
+          }
+
+          const sortedRowIndices = Array.from(rowIndices).sort((a, b) => a - b);
+          const sortedColIndices = Array.from(colIndices).sort((a, b) => a - b);
+          const sortedColumnIds = sortedColIndices.map((i) => columnIds[i]);
+
+          const tsvData = sortedRowIndices
+            .map((rowIndex) =>
+              sortedColumnIds
+                .map((columnId) => {
+                  const cellKey = `${rowIndex}:${columnId}`;
+                  return cellData.get(cellKey) ?? "";
+                })
+                .join("\t"),
+            )
+            .join("\n");
+
+          navigator.clipboard.writeText(tsvData);
+        }
+        return;
+      }
+
+      // Handle Ctrl+V / Cmd+V to paste clipboard data
+      if (isCtrlPressed && key === "v") {
+        event.preventDefault();
+        
+        // Only paste if we have a focused cell
+        if (!currentState.focusedCell) return;
+
+        navigator.clipboard
+          .readText()
+          .then((clipboardText) => {
+            if (!clipboardText) return;
+
+            // Parse TSV/CSV data (tabs for columns, newlines for rows)
+            const rows = clipboardText.split("\n").filter((row) => row.length > 0);
+            const pasteData = rows.map((row) => row.split("\t"));
+
+            if (pasteData.length === 0) return;
+
+            // Determine paste target (start from focused cell)
+            const focusedCell = currentState.focusedCell;
+            if (!focusedCell) return;
+            
+            const startRowIndex = focusedCell.rowIndex;
+            const startColumnId = focusedCell.columnId;
+            const startColIndex = navigableColumnIds.indexOf(startColumnId);
+
+            if (startColIndex === -1) return;
+
+            // Create updates array
+            const updates: Array<UpdateCell> = [];
+            const currentRows = tableRef.current?.getRowModel().rows ?? [];
+            const maxRowIndex = currentRows.length - 1;
+
+            for (let i = 0; i < pasteData.length; i++) {
+              const targetRowIndex = startRowIndex + i;
+              
+              // Skip if paste extends beyond available rows
+              if (targetRowIndex > maxRowIndex) break;
+
+              const rowData = pasteData[i];
+              if (!rowData) continue;
+
+              for (let j = 0; j < rowData.length; j++) {
+                const targetColIndex = startColIndex + j;
+                
+                // Skip if paste extends beyond available columns
+                if (targetColIndex >= navigableColumnIds.length) break;
+
+                const targetColumnId = navigableColumnIds[targetColIndex];
+                if (!targetColumnId) continue;
+
+                const value = rowData[j] ?? "";
+                updates.push({
+                  rowIndex: targetRowIndex,
+                  columnId: targetColumnId,
+                  value,
+                });
+              }
+            }
+
+            if (updates.length > 0) {
+              onDataUpdate(updates);
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to read clipboard:", error);
+          });
         return;
       }
 
@@ -1379,9 +1659,11 @@ function useDataGrid<TData>({
         searchOpen,
         rowHeight,
         isScrolling,
+        fillHandleState,
         getIsCellSelected,
         getIsSearchMatch,
         getIsActiveSearchMatch,
+        getIsFillTarget,
         onRowHeightChange,
         onRowSelect,
         onRowsDelete: onRowsDeleteProp ? onRowsDelete : undefined,
@@ -1395,6 +1677,8 @@ function useDataGrid<TData>({
         onCellContextMenu,
         onCellEditingStart,
         onCellEditingStop,
+        onFillHandleMouseDown,
+        onFillHandleMouseEnter,
         contextMenu,
         onContextMenuOpenChange,
       },
@@ -1414,9 +1698,11 @@ function useDataGrid<TData>({
       selectionState,
       searchOpen,
       isScrolling,
+      fillHandleState,
       getIsCellSelected,
       getIsSearchMatch,
       getIsActiveSearchMatch,
+      getIsFillTarget,
       onDataUpdate,
       onRowsDeleteProp,
       onRowsDelete,
@@ -1429,6 +1715,8 @@ function useDataGrid<TData>({
       onCellContextMenu,
       onCellEditingStart,
       onCellEditingStop,
+      onFillHandleMouseDown,
+      onFillHandleMouseEnter,
       contextMenu,
       onContextMenuOpenChange,
       rowHeight,

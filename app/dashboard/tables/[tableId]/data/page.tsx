@@ -40,11 +40,15 @@ export default async function DataPage({
     .eq("table_id", tableId)
     .order("display_order", { ascending: true });
 
-  const { data: records } = await supabase
+  // Fetch initial records with pagination (100 records)
+  const PAGE_SIZE = 100;
+  
+  const { data: records, count } = await supabase
     .from("records")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("table_id", tableId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(0, PAGE_SIZE - 1);
 
   return (
     <DiceTableView
@@ -52,6 +56,8 @@ export default async function DataPage({
       columns={columns || []}
       statuses={statuses || []}
       records={records || []}
+      totalRecords={count || 0}
+      pageSize={PAGE_SIZE}
     />
   );
 }

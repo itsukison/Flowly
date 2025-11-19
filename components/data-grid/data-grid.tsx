@@ -18,6 +18,7 @@ interface DataGridProps<TData>
   onEditColumn?: (columnId: string, currentLabel: string) => void;
   onDeleteColumn?: (columnId: string, columnLabel: string) => void;
   onAddColumn?: () => void;
+  onColumnReorder?: (sourceColumnId: string, targetColumnId: string) => void;
 }
 
 export function DataGrid<TData>({
@@ -34,6 +35,7 @@ export function DataGrid<TData>({
   onEditColumn,
   onDeleteColumn,
   onAddColumn,
+  onColumnReorder,
   className,
   ...props
 }: DataGridProps<TData>) {
@@ -146,6 +148,7 @@ export function DataGrid<TData>({
                         table={table}
                         onEditColumn={onEditColumn}
                         onDeleteColumn={onDeleteColumn}
+                        onColumnReorder={onColumnReorder}
                       />
                     )}
                   </div>
